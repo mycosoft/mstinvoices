@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{{ config('adminlte.title', 'MST Invoices') }} - Reset Password</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+        
+        .input-field {
+            background-color: #f0f5ff;
+            transition: all 0.3s ease;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        
+        .btn-primary {
+            background-color: #3b82f6;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2563eb;
+            transform: translateY(-2px);
+        }
+        
+        .card-container {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .logo-container {
+            transition: transform 0.3s ease;
+        }
+        
+        .logo-container:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+@php
+    $passResetUrl = View::getSection('password_reset_url') ?? config('adminlte.password_reset_url', 'password/reset');
+
+    if (config('adminlte.use_route_url', false)) {
+        $passResetUrl = $passResetUrl ? route($passResetUrl) : '';
+    } else {
+        $passResetUrl = $passResetUrl ? url($passResetUrl) : '';
+    }
+@endphp
+<body class="bg-cover bg-center bg-no-repeat bg-fixed" 
+      style="background-image: url('https://images.unsplash.com/photo-1557683316-973673baf926?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2129&q=80');">
+    
+    <div class="min-h-screen flex flex-col items-center justify-center p-4">
+        <!-- Logo Card -->
+        <div class="bg-white rounded-xl p-5 mb-4 w-full max-w-md logo-container card-container">
+            <div class="flex justify-center">
+                @if(config('adminlte.logo_img'))
+                    <img src="{{ asset(config('adminlte.logo_img')) }}" 
+                         alt="{{ config('adminlte.logo_img_alt') }}" 
+                         class="h-16 object-contain">
+                @else
+                    <div class="w-32 h-16 flex items-center justify-center">
+                        <span class="text-3xl font-bold">{{ config('adminlte.title', 'MST Invoices') }}</span>
+                    </div>
+                @endif
+            </div>
+        </div>
+        
+        <!-- Reset Password Card -->
+        <div class="bg-white rounded-xl p-8 w-full max-w-md card-container">
+            <div class="text-center mb-6">
+                <h1 class="text-3xl font-bold text-gray-800">Reset Password</h1>
+                <p class="text-gray-600 mt-2">{{ __('adminlte::adminlte.password_reset_message') }}</p>
+            </div>
+            
+            <form action="{{ $passResetUrl }}" method="post">
+                @csrf
+                
+                <!-- Token field -->
+                <input type="hidden" name="token" value="{{ $token }}">
+                
+                <!-- Email Field -->
+                <div class="mb-6">
+                    <label for="email" class="block text-gray-700 text-sm font-medium mb-2">
+                        {{ __('adminlte::adminlte.email') }}
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-envelope text-gray-400"></i>
+                        </div>
+                        <input type="email" 
+                               name="email" 
+                               id="email"
+                               class="input-field w-full pl-10 pr-3 py-3 rounded-lg border border-gray-300 text-gray-700 focus:border-blue-500"
+                               value="{{ old('email') }}" 
+                               placeholder="email@example.com" 
+                               autofocus>
+                    </div>
+                    @error('email')
+                        <p class="mt-2 text-red-600 text-sm">{{ $message }}</p>
+                    @enderror
+                </div>
+                
+                <!-- Password Field -->
+                <div class="mb-6">
+                    <label for="password" class="block text-gray-700 text-sm font-medium mb-2">
+                        {{ __('adminlte::adminlte.password') }}
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-lock text-gray-400"></i>
+                        </div>
+                        <input type="password" 
+                               name="password" 
+                               id="password"
+                               class="input-field w-full pl-10 pr-10 py-3 rounded-lg border border-gray-300 text-gray-700 focus:border-blue-500"
+                               placeholder="••••••">
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                            <button type="button" id="togglePassword" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    @error('password')
+                        <p class="mt-2 text-red-600 text-sm">{{ $message }}</p>
+                    @enderror
+                </div>
+                
+                <!-- Password Confirmation Field -->
+                <div class="mb-6">
+                    <label for="password_confirmation" class="block text-gray-700 text-sm font-medium mb-2">
+                        {{ trans('adminlte::adminlte.retype_password') }}
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-lock text-gray-400"></i>
+                        </div>
+                        <input type="password" 
+                               name="password_confirmation" 
+                               id="password_confirmation"
+                               class="input-field w-full pl-10 pr-3 py-3 rounded-lg border border-gray-300 text-gray-700 focus:border-blue-500"
+                               placeholder="••••••">
+                    </div>
+                    @error('password_confirmation')
+                        <p class="mt-2 text-red-600 text-sm">{{ $message }}</p>
+                    @enderror
+                </div>
+                
+                <!-- Submit Button -->
+                <div class="mb-6">
+                    <button type="submit" 
+                            class="btn-primary w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white focus:outline-none">
+                        <i class="fas fa-sync-alt mr-2"></i> {{ __('adminlte::adminlte.reset_password') }}
+                    </button>
+                </div>
+                
+                <!-- Back to Login -->
+                <div class="text-center">
+                    <a href="{{ route('login') }}" class="text-sm font-medium text-blue-600 hover:text-blue-800 flex justify-center items-center">
+                        <i class="fas fa-arrow-left mr-2"></i> {{ __('adminlte::adminlte.back_to_login') }}
+                    </a>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Footer -->
+        <div class="mt-8 text-center">
+            <p class="text-white/70 text-sm">
+                &copy; {{ date('Y') }} {{ config('adminlte.title', 'MST Invoices') }}. All rights reserved.
+            </p>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script>
+        // Toggle password visibility
+        document.addEventListener('DOMContentLoaded', function() {
+            const togglePassword = document.getElementById('togglePassword');
+            const password = document.getElementById('password');
+            
+            togglePassword.addEventListener('click', function() {
+                const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+                password.setAttribute('type', type);
+                
+                // Toggle icon
+                const icon = this.querySelector('i');
+                if (type === 'text') {
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
