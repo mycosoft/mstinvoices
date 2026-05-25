@@ -83,6 +83,7 @@
                         </button>
                     @endif
                     
+                    
                     <form method="POST" action="{{ route('invoices.duplicate', $invoice) }}" style="display: inline;">
                         @csrf
                         <button type="submit" class="btn btn-sm btn-info">
@@ -158,7 +159,7 @@
                         <h5><strong>Bill To:</strong></h5>
                         <address>
                             <strong>{{ $invoice->client->display_name }}</strong><br>
-                            @if($invoice->client->company_name && $invoice->client->company_name !== $invoice->client->name)
+                            @if($invoice->client->company_name && $invoice->client->company_name !== $invoice->client->display_name)
                                 {{ $invoice->client->company_name }}<br>
                             @endif
                             @if($invoice->client->full_address)
@@ -195,6 +196,16 @@
                             <tr>
                                 <td><strong>Reference:</strong></td>
                                 <td>{{ $invoice->reference_number }}</td>
+                            </tr>
+                            @endif
+                            @if($invoice->project)
+                            <tr>
+                                <td><strong>Project:</strong></td>
+                                <td>
+                                    <a href="{{ route('projects.show', $invoice->project) }}" class="text-primary">
+                                        <i class="fas fa-project-diagram"></i> {{ $invoice->project->name }}
+                                    </a>
+                                </td>
                             </tr>
                             @endif
                         </table>
@@ -524,7 +535,8 @@
                     </div>
                     <div class="form-group">
                         <label for="payment_method">Payment Method</label>
-                        <select class="form-control" id="payment_method" name="payment_method">
+                        <select class="form-control" id="payment_method" name="payment_method" required>
+                            <option value="">Please select payment method</option>
                             <option value="cash">Cash</option>
                             <option value="bank_transfer">Bank Transfer (Equity Bank)</option>
                             <option value="mobile_money">Mobile Money (Airtel / MTN)</option>
@@ -538,7 +550,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success">Add Payment</button>
+                    <button type="submit" class="btn btn-success" onclick="this.disabled=true; this.form.submit();">Add Payment</button>
                 </div>
             </form>
         </div>
@@ -568,5 +580,21 @@
 <script>
 // Auto-fill payment amount with balance due
 document.getElementById('payment_amount').value = {{ $invoice->balance_due }};
+
+// Prevent double form submission
+document.addEventListener('DOMContentLoaded', function() {
+    const paymentForm = document.querySelector('form[action*="add-payment"]');
+    if (paymentForm) {
+        paymentForm.addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn.disabled) {
+                e.preventDefault();
+                return false;
+            }
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding Payment...';
+        });
+    }
+});
 </script>
 @stop

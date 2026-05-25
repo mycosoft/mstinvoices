@@ -61,6 +61,33 @@
             font-size: 13px;
         }
         
+        .company-logo {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            max-width: 150px;
+            max-height: 80px;
+        }
+        
+        .company-logo img {
+            max-width: 100%;
+            max-height: 100%;
+            height: auto;
+            width: auto;
+        }
+        
+        .status-stamp {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+        
+        .content {
+            position: relative;
+        }
+        
         .main-info {
             display: flex;
             justify-content: space-between;
@@ -116,10 +143,12 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 30px;
+            border: 2px solid #ddd;
         }
         
         .items-table th {
-            background: #f8f9fa;
+            background: #4472C4;
+            color: white;
             border: 1px solid #ddd;
             padding: 12px 8px;
             text-align: left;
@@ -152,6 +181,8 @@
             float: right;
             width: 300px;
             margin-bottom: 30px;
+            background: transparent;
+            padding: 0;
         }
         
         .totals table {
@@ -162,6 +193,7 @@
         .totals td {
             padding: 8px 0;
             font-size: 14px;
+            border: none;
         }
         
         .totals .label {
@@ -176,14 +208,15 @@
         }
         
         .total-row {
-            border-top: 2px solid #333;
-            border-bottom: 2px solid #333;
+            background: #4472C4;
+            color: white;
         }
         
         .total-row td {
             font-weight: bold;
             font-size: 16px;
-            padding: 12px 0;
+            padding: 12px 15px;
+            color: white;
         }
         
         .clearfix::after {
@@ -243,53 +276,52 @@
         
         .status-badge {
             display: inline-block;
-            padding: 4px 10px;
-            border-radius: 15px;
-            font-size: 11px;
+            padding: 8px 15px;
+            border-radius: 25px;
+            font-size: 12px;
             font-weight: bold;
             text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 3px solid;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 1;
         }
         
         .status-accepted {
-            background: #28a745;
-            color: white;
-            border: 1px solid #1e7e34;
+            color: #28a745;
+            border-color: #28a745;
         }
         
         .status-sent {
-            background: #17a2b8;
-            color: white;
-            border: 1px solid #117a8b;
+            color: #17a2b8;
+            border-color: #17a2b8;
         }
         
         .status-viewed {
-            background: #007bff;
-            color: white;
-            border: 1px solid #0056b3;
+            color: #007bff;
+            border-color: #007bff;
         }
         
         .status-rejected {
-            background: #dc3545;
-            color: white;
-            border: 1px solid #bd2130;
+            color: #dc3545;
+            border-color: #dc3545;
         }
         
         .status-expired {
-            background: #ffc107;
-            color: #212529;
-            border: 1px solid #e0a800;
+            color: #ffc107;
+            border-color: #ffc107;
         }
         
         .status-draft {
-            background: #6c757d;
-            color: white;
-            border: 1px solid #545b62;
+            color: #6c757d;
+            border-color: #6c757d;
         }
         
         .status-converted {
-            background: #343a40;
-            color: white;
-            border: 1px solid #1d2124;
+            color: #343a40;
+            border-color: #343a40;
         }
         
         @media (max-width: 768px) {
@@ -338,6 +370,16 @@
         </div>
         
         <div class="content">
+            @if($settings->company_logo_path)
+                <div class="company-logo">
+                    <img src="{{ asset('storage/' . $settings->company_logo_path) }}" alt="{{ $settings->company_name ?? 'Company Logo' }}">
+                </div>
+            @endif
+            
+            <div class="status-stamp">
+                <span class="status-badge status-{{ $quotation->status }}">{{ ucfirst($quotation->status) }}</span>
+            </div>
+            
             <div class="company-info">
                 @if($settings->company_address)
                     <p>{{ $settings->company_address }}</p>
@@ -346,10 +388,16 @@
                     <p>{{ implode(', ', array_filter([$settings->company_city, $settings->company_state, $settings->company_postal_code])) }}</p>
                 @endif
                 @if($settings->company_phone)
-                    <p>{{ $settings->company_phone }}</p>
+                    <p>Tel: {{ $settings->company_phone }}</p>
                 @endif
                 @if($settings->company_email)
-                    <p>{{ $settings->company_email }}</p>
+                    <p>Email: {{ $settings->company_email }}</p>
+                @endif
+                @if($settings->company_website)
+                    <p>Website: {{ $settings->company_website }}</p>
+                @endif
+                @if($settings->company_tax_number)
+                    <p>Tax No: {{ $settings->company_tax_number }}</p>
                 @endif
             </div>
             
@@ -382,12 +430,6 @@
                             <td class="label">Valid Until</td>
                             <td class="value">{{ $quotation->valid_until->format('d/m/Y') }}</td>
                         </tr>
-                        <tr>
-                            <td class="label">Status</td>
-                            <td class="value">
-                                <span class="status-badge status-{{ $quotation->status }}">{{ ucfirst($quotation->status) }}</span>
-                            </td>
-                        </tr>
                     </table>
                 </div>
             </div>
@@ -396,8 +438,6 @@
                 <thead>
                     <tr>
                         <th>Description</th>
-                        <th class="text-center">Qty</th>
-                        <th class="text-right">Unit Price</th>
                         <th class="text-right">Amount</th>
                     </tr>
                 </thead>
@@ -407,12 +447,10 @@
                         <td>
                             <strong>{{ $item->item_name }}</strong>
                             @if($item->item_description)
-                                <div class="item-description">{{ $item->item_description }}</div>
+                                <div class="item-description">{!! App\Models\Setting::formatDescription($item->item_description) !!}</div>
                             @endif
                         </td>
-                        <td class="text-center">{{ $item->quantity }}</td>
-                        <td class="text-right">{{ $settings->formatCurrency($item->unit_price) }}</td>
-                        <td class="text-right">{{ $settings->formatCurrency($item->total_amount) }}</td>
+                        <td class="text-right">{!! $settings->formatCurrencyWithBreak($item->total_amount) !!}</td>
                     </tr>
                     @endforeach
                 </tbody>
@@ -422,17 +460,17 @@
                 <table>
                     <tr>
                         <td class="label">Subtotal:</td>
-                        <td class="amount">{{ $settings->formatCurrency($quotation->subtotal) }}</td>
+                        <td class="amount">{!! $settings->formatCurrencyWithBreak($quotation->subtotal) !!}</td>
                     </tr>
                     @if($quotation->tax_amount > 0)
                     <tr>
                         <td class="label">Tax:</td>
-                        <td class="amount">{{ $settings->formatCurrency($quotation->tax_amount) }}</td>
+                        <td class="amount">{!! $settings->formatCurrencyWithBreak($quotation->tax_amount) !!}</td>
                     </tr>
                     @endif
                     <tr class="total-row">
                         <td class="label">TOTAL:</td>
-                        <td class="amount">{{ $settings->formatCurrency($quotation->total_amount) }}</td>
+                        <td class="amount">{!! $settings->formatCurrencyWithBreak($quotation->total_amount) !!}</td>
                     </tr>
                 </table>
             </div>

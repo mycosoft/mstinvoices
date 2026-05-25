@@ -8,9 +8,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Carbon\Carbon;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Quotation extends Model
 {
+    use LogsActivity;
     /**
      * The attributes that are mass assignable.
      *
@@ -296,5 +299,13 @@ class Quotation extends Model
                 $quotation->quotation_number = self::generateQuotationNumber($quotation->user_id);
             }
         });
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logAll()
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 }

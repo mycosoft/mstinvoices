@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'namesilo' => [
+        'api_key' => env('NAMESILO_API_KEY'),
+        'base_url' => env('NAMESILO_BASE_URL', 'https://www.namesilo.com/api'),
+        'version' => env('NAMESILO_VERSION', '1'),
+        'format' => env('NAMESILO_FORMAT', 'json'),
+    ],
+
 ];

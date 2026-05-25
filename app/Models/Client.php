@@ -5,9 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Client extends Model
 {
+    use LogsActivity;
     /**
      * The attributes that are mass assignable.
      *
@@ -86,5 +89,13 @@ class Client extends Model
     public function getDisplayNameAttribute()
     {
         return $this->company_name ?: $this->name;
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'company_name', 'email', 'phone', 'status', 'tax_number'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 }

@@ -7,6 +7,7 @@ use App\Models\QuotationItem;
 use App\Models\Client;
 use App\Models\Item;
 use App\Models\Setting;
+use App\Services\SimpleEmailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +24,7 @@ class QuotationController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        $this->simpleEmailService = app(SimpleEmailService::class);
     }
 
     /**
@@ -436,107 +438,37 @@ class QuotationController extends Controller
         
         $validated = $request->validate([
             'email' => 'required|email',
-            'subject' => 'required|string|max:255',
+            'subject' => 'nullable|string|max:255',
             'message' => 'nullable|string',
             'send_copy' => 'boolean',
         ]);
         
         try {
-            $settings = Setting::forUser();
-            $quotation->load(['client', 'quotationItems.item']);
+            $success = $this->simpleEmailService->sendQuotation(
+                $quotation,
+                $validated['email'],
+                $validated['subject'] ?? null,
+                $validated['message'] ?? null,
+                $validated['send_copy'] ?? false
+            );
             
-            // Log email attempt
-            \Log::info('Attempting to send quotation email', [
-                'quotation_id' => $quotation->id,
-                'quotation_number' => $quotation->quotation_number,
-                'recipient_email' => $validated['email'],
-                'mail_driver' => config('mail.default'),
-                'mail_host' => config('mail.mailers.smtp.host'),
-                'mail_port' => config('mail.mailers.smtp.port'),
-                'mail_encryption' => config('mail.mailers.smtp.encryption'),
-            ]);
-            
-            // Generate PDF
-            $pdf = PDF::loadView('quotations.pdf', compact('quotation', 'settings'));
-            
-            // Prepare email data
-            $emailData = [
-                'quotation' => $quotation,
-                'settings' => $settings,
-                'email_message' => $validated['message'] ?? '',
-                'subject' => $validated['subject'],
-            ];
-            
-            // Send email
-            Mail::send('emails.quotation', $emailData, function ($mail) use ($validated, $quotation, $pdf, $settings, $emailData) {
-                $mail->to($validated['email'])
-                     ->subject($validated['subject'])
-                     ->attachData($pdf->output(), 'quotation-' . $quotation->quotation_number . '.pdf', [
-                         'mime' => 'application/pdf',
-                     ]);
-                
-                // Send copy to user if requested
-                if (isset($validated['send_copy']) && $validated['send_copy']) {
-                    $copyEmail = $settings->company_email ?? auth()->user()->email;
-                    $mail->cc($copyEmail);
-                    \Log::info('Sending copy to: ' . $copyEmail);
-                }
-                
-                // Set from address
-                $fromEmail = $settings->company_email ?? config('mail.from.address');
-                $fromName = $settings->company_name ?? config('mail.from.name');
-                $mail->from($fromEmail, $fromName);
-                
-                \Log::info('Email configured', [
-                    'from_email' => $fromEmail,
-                    'from_name' => $fromName,
-                    'to_email' => $validated['email'],
-                    'subject' => $validated['subject']
-                ]);
-            });
-            
-            // Update quotation status
-            if ($quotation->status === 'draft') {
-                $quotation->markAsSent();
-                \Log::info('Quotation status updated to sent for quotation: ' . $quotation->quotation_number);
+            if ($success) {
+                $testMode = config('app.debug') || config('app.env') === 'local';
+                $message = $testMode 
+                    ? 'Quotation sent successfully to mycosoftt@gmail.com (Test Mode)!'
+                    : 'Quotation sent successfully to ' . $validated['email'] . '!';
+                    
+                return back()->with('success', $message);
+            } else {
+                return back()->with('error', 'Failed to send quotation email. Please try again.');
             }
             
-            // Update last sent timestamp
-            $quotation->update([
-                'last_sent_at' => now(),
-            ]);
-            
-            \Log::info('Quotation email sent successfully', [
-                'quotation_id' => $quotation->id,
-                'quotation_number' => $quotation->quotation_number,
-                'recipient_email' => $validated['email']
-            ]);
-            
-            return back()->with('success', 'Quotation sent successfully to ' . $validated['email'] . '! Check your email logs for confirmation.');
-            
-        } catch (\Symfony\Component\Mailer\Exception\TransportException $e) {
-            \Log::error('SMTP Transport Error when sending quotation email', [
-                'quotation_id' => $quotation->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return back()->with('error', 'SMTP Error: Unable to connect to mail server. Please check your email configuration. Error: ' . $e->getMessage());
-            
-        } catch (\Swift_TransportException $e) {
-            \Log::error('Swift Transport Error when sending quotation email', [
-                'quotation_id' => $quotation->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return back()->with('error', 'Mail Transport Error: ' . $e->getMessage());
-            
         } catch (\Exception $e) {
-            \Log::error('General error when sending quotation email', [
+            \Log::error('Error sending quotation email', [
                 'quotation_id' => $quotation->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'error' => $e->getMessage()
             ]);
-            return back()->with('error', 'Failed to send quotation: ' . $e->getMessage());
+            return back()->with('error', 'Error sending email: ' . $e->getMessage());
         }
     }
 

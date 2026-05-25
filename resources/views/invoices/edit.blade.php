@@ -65,11 +65,42 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
+                                        <label for="project_id">Project (Optional)</label>
+                                        <select class="form-control @error('project_id') is-invalid @enderror" 
+                                                id="project_id" name="project_id">
+                                            <option value="">Not associated with a project</option>
+                                            @foreach($projects as $project)
+                                                <option value="{{ $project->id }}" {{ old('project_id', $invoice->project_id) == $project->id ? 'selected' : '' }}>
+                                                    {{ $project->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('project_id')
+                                            <span class="invalid-feedback">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
                                         <label for="invoice_number">Invoice Number <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control @error('invoice_number') is-invalid @enderror" 
                                                id="invoice_number" name="invoice_number" 
                                                value="{{ old('invoice_number', $invoice->invoice_number) }}" required>
                                         @error('invoice_number')
+                                            <span class="invalid-feedback">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="reference_number">Reference Number</label>
+                                        <input type="text" class="form-control @error('reference_number') is-invalid @enderror" 
+                                               id="reference_number" name="reference_number" 
+                                               value="{{ old('reference_number', $invoice->reference_number) }}" 
+                                               placeholder="Client PO number">
+                                        @error('reference_number')
                                             <span class="invalid-feedback">{{ $message }}</span>
                                         @enderror
                                     </div>
@@ -138,6 +169,7 @@
                                         <label for="currency">Currency <span class="text-danger">*</span></label>
                                         <select class="form-control @error('currency') is-invalid @enderror" 
                                                 id="currency" name="currency" required>
+                                            <option value="UGX" {{ old('currency', $invoice->currency) == 'UGX' ? 'selected' : '' }}>UGX</option>
                                             <option value="USD" {{ old('currency', $invoice->currency) == 'USD' ? 'selected' : '' }}>USD</option>
                                             <option value="EUR" {{ old('currency', $invoice->currency) == 'EUR' ? 'selected' : '' }}>EUR</option>
                                             <option value="GBP" {{ old('currency', $invoice->currency) == 'GBP' ? 'selected' : '' }}>GBP</option>
@@ -318,6 +350,16 @@
 
 @section('js')
     <script>
+        // Ensure jQuery is loaded before running the script
+        function initInvoiceEdit() {
+            if (typeof $ === 'undefined') {
+                console.log('jQuery not loaded yet, retrying in 100ms...');
+                setTimeout(initInvoiceEdit, 100);
+                return;
+            }
+            
+            console.log('jQuery loaded successfully for invoice edit');
+            
         let itemCounter = 0;
         const existingItems = @json($invoice->invoiceItems);
         
@@ -326,11 +368,8 @@
         const currencyPosition = '{{ $settings->currency_position }}';
         
         function formatCurrency(amount) {
-            const formatted = parseFloat(amount).toFixed(2);
-            if (currencyPosition === 'before') {
-                return currencySymbol + formatted;
-            }
-            return formatted + currencySymbol;
+            const currency = $('#currency').val() || 'UGX';
+            return currency + ' ' + amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
         }
         
         $(document).ready(function() {
@@ -354,6 +393,18 @@
             
             $('#add-item').click(function() {
                 addInvoiceItem();
+            });
+            
+            // Add from catalog button functionality
+            $('#add-from-catalog').click(function() {
+                // Scroll to the catalog section and highlight it
+                $('html, body').animate({
+                    scrollTop: $('#catalog-items').offset().top - 100
+                }, 500);
+                $('#catalog-items').focus().addClass('border-primary');
+                setTimeout(() => {
+                    $('#catalog-items').removeClass('border-primary');
+                }, 2000);
             });
             
             $('#add-catalog-item').click(function() {
@@ -396,8 +447,9 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>Description</label>
-                                <input type="text" name="items[${itemCounter}][item_description]" 
-                                       class="form-control" value="${data.description || ''}">
+                                <textarea name="items[${itemCounter}][item_description]" 
+                                          class="form-control" rows="2" 
+                                          placeholder="Item description...">${data.description || ''}</textarea>
                             </div>
                         </div>
                     </div>
@@ -535,5 +587,9 @@
                 }
             });
         });
+        }
+        
+        // Start the initialization
+        initInvoiceEdit();
     </script>
 @stop

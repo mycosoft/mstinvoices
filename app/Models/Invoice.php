@@ -6,9 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Carbon\Carbon;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Invoice extends Model
 {
+    use LogsActivity;
     /**
      * The attributes that are mass assignable.
      *
@@ -79,6 +82,11 @@ class Invoice extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
     }
 
     /**
@@ -176,6 +184,74 @@ class Invoice extends Model
     }
 
     /**
+     * Add a payment to the invoice (partial or full)
+     */
+    public function addPayment($amount, $paymentMethod = 'cash', $notes = null): InvoicePayment
+    {
+        // Create payment record
+        $payment = $this->payments()->create([
+            'amount' => $amount,
+            'payment_date' => now(),
+            'payment_method' => $paymentMethod,
+            'notes' => $notes,
+            'created_by' => auth()->id()
+        ]);
+
+        // Update invoice payment status
+        $this->paid_amount += $amount;
+        $this->balance_due = max(0, $this->total_amount - $this->paid_amount);
+        
+        // Determine payment status
+        if ($this->balance_due <= 0) {
+            $this->payment_status = 'paid';
+            $this->paid_date = now();
+            $this->status = 'paid';
+        } elseif ($this->paid_amount > 0) {
+            $this->payment_status = 'partial';
+            $this->status = 'partial';
+        }
+        
+        $this->save();
+        
+        return $payment;
+    }
+
+    /**
+     * Get total payments made this month
+     */
+    public function getPaymentsThisMonthAttribute(): float
+    {
+        $thisMonth = now()->startOfMonth();
+        return $this->payments()
+            ->where('payment_date', '>=', $thisMonth)
+            ->sum('amount');
+    }
+
+    /**
+     * Get the latest payment
+     */
+    public function getLatestPaymentAttribute(): ?InvoicePayment
+    {
+        return $this->payments()->latest('payment_date')->first();
+    }
+
+    /**
+     * Get payment history summary
+     */
+    public function getPaymentHistoryAttribute(): array
+    {
+        $payments = $this->payments()->orderBy('payment_date', 'desc')->get();
+        
+        return [
+            'total_payments' => $payments->count(),
+            'total_amount' => $payments->sum('amount'),
+            'payment_methods' => $payments->pluck('payment_method')->unique()->values(),
+            'last_payment_date' => $payments->first()?->payment_date,
+            'payment_progress' => $this->payment_progress
+        ];
+    }
+
+    /**
      * Generate the next invoice number.
      */
     public static function generateInvoiceNumber($userId): string
@@ -211,7 +287,7 @@ class Invoice extends Model
             'tax_amount' => $taxAmount,
             'discount_amount' => $totalDiscount,
             'total_amount' => $totalAmount,
-            'balance_due' => $totalAmount - $this->paid_amount,
+            'balance_due' => $totalAmount - ($this->paid_amount ?? 0),
         ]);
     }
 
@@ -243,35 +319,32 @@ class Invoice extends Model
     }
 
     /**
-     * Add payment to invoice.
+     * Recalculate payment status based on actual payments
      */
-    public function addPayment(float $amount): void
+    public function recalculatePaymentStatus(): void
     {
-        $newPaidAmount = $this->paid_amount + $amount;
-        $newBalance = $this->total_amount - $newPaidAmount;
+        $totalPayments = $this->payments()->sum('amount');
         
-        $paymentStatus = 'unpaid';
-        $status = $this->status; // Keep current status by default
-        $paidDate = $this->paid_date;
+        $this->paid_amount = $totalPayments;
+        $this->balance_due = max(0, $this->total_amount - $totalPayments);
         
-        if ($newPaidAmount >= $this->total_amount) {
-            $paymentStatus = 'paid';
-            $status = 'paid'; // Update main status to paid
-            $paidDate = now();
-        } elseif ($newPaidAmount > 0) {
-            $paymentStatus = 'partial';
-            $status = 'partial'; // Update main status to partial
-            $paidDate = null;
+        if ($this->balance_due <= 0) {
+            $this->payment_status = 'paid';
+            $this->paid_date = $this->payments()->latest('payment_date')->first()?->payment_date;
+            $this->status = 'paid';
+        } elseif ($totalPayments > 0) {
+            $this->payment_status = 'partial';
+            $this->status = 'partial';
+        } else {
+            $this->payment_status = 'unpaid';
+            $this->status = 'pending';
+            $this->paid_date = null;
         }
         
-        $this->update([
-            'paid_amount' => $newPaidAmount,
-            'balance_due' => max(0, $newBalance),
-            'payment_status' => $paymentStatus,
-            'status' => $status,
-            'paid_date' => $paidDate,
-        ]);
+        $this->save();
     }
+
+
 
     /**
      * Boot the model.
@@ -285,5 +358,13 @@ class Invoice extends Model
                 $invoice->invoice_number = self::generateInvoiceNumber($invoice->user_id);
             }
         });
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logAll()
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 }

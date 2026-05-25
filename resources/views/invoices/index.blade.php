@@ -184,6 +184,18 @@
                                         </select>
                                     </div>
                                 </div>
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <select name="project_id" class="form-control">
+                                            <option value="">All Projects</option>
+                                            @foreach($projects ?? [] as $project)
+                                                <option value="{{ $project->id }}" {{ request('project_id') == $project->id ? 'selected' : '' }}>
+                                                    {{ $project->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <button type="submit" class="btn btn-info btn-sm">
@@ -225,6 +237,7 @@
                                     <tr>
                                         <th>Invoice #</th>
                                         <th>Client</th>
+                                        <th>Project</th>
                                         <th>Date</th>
                                         <th>Due Date</th>
                                         <th>Amount</th>
@@ -250,6 +263,15 @@
                                                 <strong>{{ $invoice->client->display_name }}</strong>
                                                 @if($invoice->client->company_name && $invoice->client->name !== $invoice->client->company_name)
                                                     <br><small class="text-muted">{{ $invoice->client->name }}</small>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($invoice->project)
+                                                    <a href="{{ route('projects.show', $invoice->project) }}" class="text-primary">
+                                                        <i class="fas fa-project-diagram"></i> {{ $invoice->project->name }}
+                                                    </a>
+                                                @else
+                                                    <span class="text-muted">-</span>
                                                 @endif
                                             </td>
                                             <td>{{ $invoice->invoice_date->format('M d, Y') }}</td>

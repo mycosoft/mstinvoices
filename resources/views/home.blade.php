@@ -77,81 +77,189 @@
     </div>
 </div>
 
-<!-- Second Row - Additional Statistics Cards -->
+<!-- Second Row - Info Boxes with Different Style -->
 <div class="row">
-    <!-- Quotations Rate -->
-    <div class="col-lg-3 col-6">
-        <div class="small-box bg-primary">
-            <div class="inner">
-                <h3>{{ $quotationRate }}%</h3>
-                <p>Quotation Acceptance Rate</p>
-            </div>
-            <div class="icon">
-                <i class="fas fa-handshake"></i>
-            </div>
-            <a href="{{ route('quotations.index') }}" class="small-box-footer">
-                View Details <i class="fas fa-arrow-circle-right"></i>
-            </a>
-        </div>
-    </div>
-    
-    <!-- Average Invoice Value -->
-    <div class="col-lg-3 col-6">
-        <div class="small-box bg-secondary">
-            <div class="inner">
-                <h3>{{ $settings->formatCurrency($averageInvoiceValue) }}</h3>
-                <p>Average Invoice</p>
-            </div>
-            <div class="icon">
-                <i class="fas fa-chart-bar"></i>
-            </div>
-            <a href="{{ route('reports.index') }}" class="small-box-footer">
-                View Analysis <i class="fas fa-arrow-circle-right"></i>
-            </a>
-        </div>
-    </div>
-    
     <!-- Pending Amount -->
     <div class="col-lg-3 col-6">
-        <div class="small-box bg-orange">
-            <div class="inner">
-                <h3>{{ $settings->formatCurrency($pendingAmount) }}</h3>
-                <p>Pending Amount</p>
+        <div class="info-box">
+            <span class="info-box-icon bg-orange"><i class="fas fa-hourglass-half"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text">Pending Amount</span>
+                <span class="info-box-number">{{ $settings->formatCurrency($pendingAmount) }}</span>
+                <div class="progress">
+                    <div class="progress-bar bg-orange" style="width: {{ min(100, ($pendingAmount / max($totalRevenue, 1)) * 100) }}%"></div>
+                </div>
+                <span class="progress-description">
+                    <a href="{{ route('reports.index') }}" class="text-orange">
+                        <i class="fas fa-chart-bar"></i> View Outstanding
+                    </a>
+                </span>
             </div>
-            <div class="icon">
-                <i class="fas fa-hourglass-half"></i>
-            </div>
-            <a href="{{ route('reports.index') }}" class="small-box-footer">
-                View Outstanding <i class="fas fa-arrow-circle-right"></i>
-            </a>
         </div>
     </div>
     
-    <!-- Draft Items -->
+    <!-- Total Clients -->
     <div class="col-lg-3 col-6">
-        <div class="small-box bg-dark">
-            <div class="inner">
-                <h3>{{ number_format($draftInvoices + $draftQuotations) }}</h3>
-                <p>Draft Items ({{ $draftInvoices }} Invoices, {{ $draftQuotations }} Quotations)</p>
+        <div class="info-box">
+            <span class="info-box-icon bg-info"><i class="fas fa-users"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text">Total Clients</span>
+                <span class="info-box-number">{{ number_format($totalClients) }}</span>
+                <div class="progress">
+                    <div class="progress-bar bg-info" style="width: {{ min(100, ($totalClients / max($totalInvoices, 1)) * 100) }}%"></div>
+                </div>
+                <span class="progress-description">
+                    <a href="{{ route('clients.index') }}" class="text-info">
+                        <i class="fas fa-users"></i> View Clients
+                    </a>
+                </span>
             </div>
-            <div class="icon">
-                <i class="fas fa-edit"></i>
+        </div>
+    </div>
+    
+    <!-- Total Expenses -->
+    <div class="col-lg-3 col-6">
+        <div class="info-box">
+            <span class="info-box-icon bg-purple"><i class="fas fa-receipt"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text">Total Expenses</span>
+                <span class="info-box-number">{{ $settings->formatCurrency($totalExpenses) }}</span>
+                <div class="progress">
+                    <div class="progress-bar bg-purple" style="width: {{ min(100, ($totalExpenses / max($totalRevenue, 1)) * 100) }}%"></div>
+                </div>
+                <span class="progress-description">
+                    <a href="{{ route('expenses.index') }}" class="text-purple">
+                        <i class="fas fa-receipt"></i> View All
+                    </a>
+                </span>
             </div>
-            <a href="{{ route('invoices.index') }}" class="small-box-footer">
-                View Drafts <i class="fas fa-arrow-circle-right"></i>
-            </a>
+        </div>
+    </div>
+    
+    <!-- Net Income (Revenue - Expenses) -->
+    <div class="col-lg-3 col-6">
+        <div class="info-box">
+            <span class="info-box-icon {{ ($totalRevenue - $totalExpenses) >= 0 ? 'bg-success' : 'bg-danger' }}">
+                <i class="fas fa-chart-line"></i>
+            </span>
+            <div class="info-box-content">
+                <span class="info-box-text">Net Income</span>
+                <span class="info-box-number">{{ $settings->formatCurrency($totalRevenue - $totalExpenses) }}</span>
+                <div class="progress">
+                    <div class="progress-bar {{ ($totalRevenue - $totalExpenses) >= 0 ? 'bg-success' : 'bg-danger' }}" 
+                         style="width: {{ min(100, abs(($totalRevenue - $totalExpenses) / max($totalRevenue, 1)) * 100) }}%"></div>
+                </div>
+                <span class="progress-description">
+                    <a href="{{ route('reports.index') }}" class="text-{{ ($totalRevenue - $totalExpenses) >= 0 ? 'success' : 'danger' }}">
+                        <i class="fas fa-chart-line"></i> View Analysis
+                    </a>
+                </span>
+            </div>
         </div>
     </div>
 </div>
 
+<!-- Third Row - Cards with Different Style -->
+<div class="row">
+    <!-- Total Projects -->
+    <div class="col-lg-3 col-6">
+        <div class="card card-outline card-primary">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-project-diagram"></i> Total Projects
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="text-center">
+                    <h2 class="text-primary">{{ number_format($totalProjects) }}</h2>
+                    <p class="text-muted">Active Projects</p>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ route('projects.index') }}" class="btn btn-primary btn-sm btn-block">
+                    <i class="fas fa-eye"></i> View All
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Active Projects -->
+    <div class="col-lg-3 col-6">
+        <div class="card card-outline card-warning">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-play-circle"></i> Active Projects
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="text-center">
+                    <h2 class="text-warning">{{ number_format($activeProjects) }}</h2>
+                    <p class="text-muted">In Progress</p>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ route('projects.index') }}?status=in_progress" class="btn btn-warning btn-sm btn-block">
+                    <i class="fas fa-play"></i> View Active
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Completed Projects -->
+    <div class="col-lg-3 col-6">
+        <div class="card card-outline card-success">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-check-circle"></i> Completed Projects
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="text-center">
+                    <h2 class="text-success">{{ number_format($completedProjects) }}</h2>
+                    <p class="text-muted">Successfully Done</p>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ route('projects.index') }}?status=completed" class="btn btn-success btn-sm btn-block">
+                    <i class="fas fa-check"></i> View Completed
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Cancelled Projects -->
+    <div class="col-lg-3 col-6">
+        <div class="card card-outline card-danger">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-times-circle"></i> Cancelled Projects
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="text-center">
+                    <h2 class="text-danger">{{ number_format($cancelledProjects) }}</h2>
+                    <p class="text-muted">Terminated</p>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ route('projects.index') }}?status=cancelled" class="btn btn-danger btn-sm btn-block">
+                    <i class="fas fa-times"></i> View Cancelled
+                </a>
+            </div>
+        </div>
+    </div>
+    
+
+</div>
+
 <!-- Charts and Analytics Row -->
 <div class="row">
-    <!-- Monthly Revenue Chart -->
+    <!-- Income vs Expenses Chart -->
     <div class="col-md-8">
         <div class="card card-outline card-primary">
             <div class="card-header">
                 <h3 class="card-title">
-                    <i class="fas fa-chart-line text-primary"></i> Revenue Trend (Last 6 Months)
+                    <i class="fas fa-chart-line text-primary"></i> Income vs Expenses (Last 6 Months)
                 </h3>
                 <div class="card-tools">
                     <button type="button" class="btn btn-tool" data-card-widget="collapse">
@@ -160,7 +268,7 @@
                 </div>
             </div>
             <div class="card-body">
-                <canvas id="revenueChart" style="height: 350px;"></canvas>
+                <canvas id="incomeExpenseChart" style="height: 280px;"></canvas>
             </div>
         </div>
     </div>
@@ -179,7 +287,7 @@
                 </div>
             </div>
             <div class="card-body">
-                <canvas id="paymentChart" style="height: 350px;"></canvas>
+                <canvas id="paymentChart" style="height: 250px;"></canvas>
             </div>
         </div>
     </div>
@@ -201,7 +309,7 @@
             <div class="card-body p-0">
                 @if($recentPayments->count() > 0)
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover">
+                    <table class="table table-striped table-hover table-sm">
                         <thead class="thead-light">
                             <tr>
                                 <th>Invoice #</th>
@@ -245,41 +353,41 @@
                     </table>
                 </div>
                 @else
-                <div class="text-center py-4">
-                    <i class="fas fa-money-bill-wave fa-3x text-muted mb-3"></i>
-                    <h5 class="text-muted">No Recent Payments</h5>
-                    <p class="text-muted">Payments from the last 7 days will appear here.</p>
+                <div class="text-center py-3">
+                    <i class="fas fa-money-bill-wave fa-2x text-muted mb-2"></i>
+                    <h6 class="text-muted">No Recent Payments</h6>
+                    <small class="text-muted">Payments from the last 7 days will appear here.</small>
                 </div>
                 @endif
             </div>
         </div>
     </div>
     
-    <!-- Quotations Accepted -->
+    <!-- Recent Quotations -->
     <div class="col-md-6">
-        <div class="card card-outline card-success">
+        <div class="card card-outline card-warning">
             <div class="card-header">
                 <h3 class="card-title">
-                    <i class="fas fa-handshake text-success"></i> Quotations Accepted
+                    <i class="fas fa-file-alt text-warning"></i> Recent Quotations
                 </h3>
                 <div class="card-tools">
-                    <span class="badge badge-success">{{ $recentAcceptedQuotations->count() }}</span>
+                    <span class="badge badge-warning">{{ $recentQuotations->count() }}</span>
                 </div>
             </div>
             <div class="card-body p-0">
-                @if($recentAcceptedQuotations->count() > 0)
+                @if($recentQuotations->count() > 0)
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover">
+                    <table class="table table-striped table-hover table-sm">
                         <thead class="thead-light">
                             <tr>
-                                <th>Quotation #</th>
+                                <th>Quote #</th>
                                 <th>Client</th>
                                 <th>Amount</th>
-                                <th>Accepted Date</th>
+                                <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($recentAcceptedQuotations as $quotation)
+                            @foreach($recentQuotations as $quotation)
                             <tr>
                                 <td>
                                     <a href="{{ route('quotations.show', $quotation) }}" class="text-primary font-weight-bold">
@@ -288,18 +396,27 @@
                                 </td>
                                 <td>{{ $quotation->client->name }}</td>
                                 <td>
-                                    <span class="text-success font-weight-bold">
+                                    <span class="font-weight-bold">
                                         {{ $settings->formatCurrency($quotation->total_amount) }}
                                     </span>
                                 </td>
                                 <td>
-                                    <small class="text-muted">
-                                        @if($quotation->accepted_date)
-                                            {{ $quotation->accepted_date->format('M d, Y') }}
-                                        @else
-                                            -
-                                        @endif
-                                    </small>
+                                    @switch($quotation->status)
+                                        @case('accepted')
+                                            <span class="badge badge-success">Accepted</span>
+                                            @break
+                                        @case('rejected')
+                                            <span class="badge badge-danger">Rejected</span>
+                                            @break
+                                        @case('sent')
+                                            <span class="badge badge-info">Sent</span>
+                                            @break
+                                        @case('draft')
+                                            <span class="badge badge-secondary">Draft</span>
+                                            @break
+                                        @default
+                                            <span class="badge badge-light">{{ ucfirst($quotation->status) }}</span>
+                                    @endswitch
                                 </td>
                             </tr>
                             @endforeach
@@ -307,10 +424,10 @@
                     </table>
                 </div>
                 @else
-                <div class="text-center py-4">
-                    <i class="fas fa-handshake fa-3x text-muted mb-3"></i>
-                    <h5 class="text-muted">No Accepted Quotations</h5>
-                    <p class="text-muted">Accepted quotations will appear here.</p>
+                <div class="text-center py-3">
+                    <i class="fas fa-file-alt fa-2x text-muted mb-2"></i>
+                    <h6 class="text-muted">No Recent Quotations</h6>
+                    <small class="text-muted">Recent quotations will appear here.</small>
                 </div>
                 @endif
             </div>
@@ -510,10 +627,25 @@
     box-shadow: 0 2px 4px rgba(0,0,0,.04), 0 8px 16px rgba(0,0,0,.06);
     border: none;
     transition: all 0.3s ease;
+    margin-bottom: 15px; /* Reduced margin for compact layout */
 }
 
 .card:hover {
     box-shadow: 0 4px 8px rgba(0,0,0,.08), 0 12px 24px rgba(0,0,0,.1);
+}
+
+/* Compact Dashboard Styling */
+.card-body {
+    padding: 15px; /* Reduced from default 1.25rem */
+}
+
+.table-sm th,
+.table-sm td {
+    padding: 0.4rem; /* More compact table cells */
+}
+
+.row {
+    margin-bottom: 10px; /* Reduced row spacing */
 }
 
 .card-outline.card-primary {
@@ -740,44 +872,65 @@ function initializeAnimations() {
 
 // Chart Initialization
 function initializeCharts() {
-    // Revenue Trend Chart
-    initializeRevenueChart();
+    // Income vs Expenses Chart
+    initializeIncomeExpenseChart();
     
     // Payment Status Chart
     initializePaymentChart();
 }
 
-// Revenue Chart
-function initializeRevenueChart() {
-    const revenueCtx = document.getElementById('revenueChart');
-    if (!revenueCtx) return;
+// Income vs Expenses Chart
+function initializeIncomeExpenseChart() {
+    const chartCtx = document.getElementById('incomeExpenseChart');
+    if (!chartCtx) return;
     
     const revenueData = @json($monthlyRevenue);
+    const expenseData = @json($monthlyExpenses);
     const monthLabels = @json($monthLabels);
     
-    // Create gradient
-    const gradient = revenueCtx.getContext('2d').createLinearGradient(0, 0, 0, 350);
-    gradient.addColorStop(0, 'rgba(54, 162, 235, 0.3)');
-    gradient.addColorStop(1, 'rgba(54, 162, 235, 0.05)');
+    // Create gradients
+    const ctx = chartCtx.getContext('2d');
+    const revenueGradient = ctx.createLinearGradient(0, 0, 0, 350);
+    revenueGradient.addColorStop(0, 'rgba(40, 167, 69, 0.3)');
+    revenueGradient.addColorStop(1, 'rgba(40, 167, 69, 0.05)');
     
-    new Chart(revenueCtx, {
+    const expenseGradient = ctx.createLinearGradient(0, 0, 0, 350);
+    expenseGradient.addColorStop(0, 'rgba(220, 53, 69, 0.3)');
+    expenseGradient.addColorStop(1, 'rgba(220, 53, 69, 0.05)');
+    
+    new Chart(chartCtx, {
         type: 'line',
         data: {
             labels: monthLabels,
             datasets: [{
-                label: 'Monthly Revenue',
+                label: 'Income',
                 data: revenueData,
-                backgroundColor: gradient,
-                borderColor: '#007bff',
+                backgroundColor: revenueGradient,
+                borderColor: '#28a745',
                 borderWidth: 3,
                 fill: true,
                 tension: 0.4,
-                pointBackgroundColor: '#007bff',
+                pointBackgroundColor: '#28a745',
                 pointBorderColor: '#fff',
                 pointBorderWidth: 3,
                 pointRadius: 6,
                 pointHoverRadius: 8,
-                pointHoverBackgroundColor: '#0056b3',
+                pointHoverBackgroundColor: '#1e7e34',
+                pointHoverBorderWidth: 3
+            }, {
+                label: 'Expenses',
+                data: expenseData,
+                backgroundColor: expenseGradient,
+                borderColor: '#dc3545',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#dc3545',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 3,
+                pointRadius: 6,
+                pointHoverRadius: 8,
+                pointHoverBackgroundColor: '#c82333',
                 pointHoverBorderWidth: 3
             }]
         },
@@ -790,22 +943,31 @@ function initializeRevenueChart() {
             },
             plugins: {
                 legend: {
-                    display: false
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20,
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        }
+                    }
                 },
                 tooltip: {
                     backgroundColor: 'rgba(0, 0, 0, 0.9)',
                     titleColor: '#fff',
                     bodyColor: '#fff',
-                    borderColor: '#007bff',
+                    borderColor: '#6c757d',
                     borderWidth: 2,
                     cornerRadius: 8,
-                    displayColors: false,
+                    displayColors: true,
                     callbacks: {
                         title: function(context) {
-                            return 'Revenue for ' + context[0].label;
+                            return context[0].label;
                         },
                         label: function(context) {
-                            return '{{ $settings->currency_symbol }} ' + context.parsed.y.toLocaleString();
+                            return context.dataset.label + ': {{ $settings->currency_symbol }} ' + context.parsed.y.toLocaleString();
                         }
                     }
                 }
@@ -855,7 +1017,7 @@ function initializePaymentChart() {
     if (!paymentCtx) return;
     
     const paymentData = @json(array_values($paymentStatus));
-    const paymentLabels = ['Paid', 'Unpaid', 'Partial'];
+    const paymentLabels = @json(array_map('ucfirst', array_keys($paymentStatus)));
     
     new Chart(paymentCtx, {
         type: 'doughnut',
@@ -1022,5 +1184,6 @@ window.addEventListener('resize', function() {
         });
     }, 300);
 });
+
 </script>
 @stop

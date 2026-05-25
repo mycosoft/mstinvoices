@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+use App\Models\User;
+use App\Models\Setting;
 
 class DatabaseSeeder extends Seeder
 {
@@ -13,11 +14,30 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // Create default admin user
+        $user = User::create([
+            'name' => 'Admin',
+            'email' => 'admin@mst.com',
+            'password' => Hash::make('password'),
+            'email_verified_at' => now(),
         ]);
+
+        // Create default settings for the admin user
+        Setting::forUser($user->id);
+
+        $this->command->info('Default admin user created: admin@mst.com / password');
+        $this->command->info('Default settings created for admin user');
+        
+        // Seed tech services
+        $this->call(TechServicesSeeder::class);
+        
+        // Seed default chart of accounts
+        $this->call(ChartOfAccountsSeeder::class);
+        
+        // Seed IT inventory (products, suppliers, purchases, stock)
+        $this->call(ItInventorySeeder::class);
+        
+        // Seed roles and permissions
+        $this->call(RolesAndPermissionsSeeder::class);
     }
 }

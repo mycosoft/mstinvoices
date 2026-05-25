@@ -6,9 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Report extends Model
 {
+    use LogsActivity;
     /**
      * The attributes that are mass assignable.
      *
@@ -721,5 +724,13 @@ class Report extends Model
             'quarterly_trends' => $quarterlyTrends,
             'date_range' => [$dateFrom, $dateTo],
         ];
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logAll()
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 }

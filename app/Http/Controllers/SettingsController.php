@@ -55,6 +55,7 @@ class SettingsController extends Controller
             'default_currency' => 'required|string|size:3',
             'currency_symbol' => 'required|string|max:10',
             'currency_position' => 'required|in:before,after',
+            'currency_decimal_places' => 'required|integer|min:0|max:2',
             'invoice_prefix' => 'required|string|max:10',
             'invoice_number_length' => 'required|integer|min:3|max:10',
             'default_payment_terms' => 'required|integer|min:1|max:365',

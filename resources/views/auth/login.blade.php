@@ -87,13 +87,19 @@
         <!-- Logo Card -->
         <div class="bg-white rounded-xl p-5 mb-4 w-full max-w-md logo-container card-container">
             <div class="flex justify-center">
-                @if(config('adminlte.logo_img'))
-                    <img src="{{ asset(config('adminlte.logo_img')) }}" 
-                         alt="{{ config('adminlte.logo_img_alt') }}" 
+                @php
+                    // Get the first user's settings (for now, we'll use the first user)
+                    $firstUser = \App\Models\User::first();
+                    $settings = $firstUser ? \App\Models\Setting::forUser($firstUser->id) : null;
+                @endphp
+                
+                @if($settings && $settings->company_logo_path)
+                    <img src="{{ $settings->company_logo_url }}" 
+                         alt="{{ $settings->company_name ?? 'Company Logo' }}" 
                          class="h-16 object-contain">
                 @else
                     <div class="w-32 h-16 flex items-center justify-center">
-                        <span class="text-3xl font-bold">{{ config('adminlte.title', 'MST Invoices') }}</span>
+                        <span class="text-3xl font-bold">{{ $settings->company_name ?? config('adminlte.title', 'MST Invoices') }}</span>
                     </div>
                 @endif
             </div>

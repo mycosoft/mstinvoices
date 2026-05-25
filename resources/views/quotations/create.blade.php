@@ -296,6 +296,16 @@
 
 @section('js')
     <script>
+        // Ensure jQuery is loaded before running the script
+        function initQuotationCreate() {
+            if (typeof $ === 'undefined') {
+                console.log('jQuery not loaded yet, retrying in 100ms...');
+                setTimeout(initQuotationCreate, 100);
+                return;
+            }
+            
+            console.log('jQuery loaded successfully for quotation create');
+            
         $(document).ready(function() {
             let itemIndex = 0;
             
@@ -415,5 +425,9 @@
                 return currency + ' ' + amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
             }
         });
+        }
+        
+        // Start the initialization
+        initQuotationCreate();
     </script>
 @stop

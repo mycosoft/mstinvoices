@@ -6,8 +6,11 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoicePayment;
 use App\Models\Client;
+use App\Models\Project;
 use App\Models\Item;
 use App\Models\Setting;
+use App\Services\PaymentNotificationService;
+use App\Services\SimpleEmailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +27,7 @@ class InvoiceController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        $this->simpleEmailService = app(SimpleEmailService::class);
     }
 
     /**
@@ -31,7 +35,7 @@ class InvoiceController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Auth::user()->invoices()->with(['client', 'invoiceItems']);
+        $query = Auth::user()->invoices()->with(['client', 'project', 'invoiceItems']);
         
         // Handle search
         if ($request->has('search') && $request->search) {
@@ -61,6 +65,11 @@ class InvoiceController extends Controller
             $query->where('client_id', $request->client_id);
         }
         
+        // Handle project filter
+        if ($request->has('project_id') && $request->project_id) {
+            $query->where('project_id', $request->project_id);
+        }
+        
         // Handle date range filter
         if ($request->has('date_from') && $request->date_from) {
             $query->whereDate('invoice_date', '>=', $request->date_from);
@@ -80,13 +89,16 @@ class InvoiceController extends Controller
         // Get clients for filter dropdown
         $clients = Auth::user()->clients()->active()->orderBy('name')->get();
         
+        // Get projects for filter dropdown
+        $projects = Auth::user()->projects()->orderBy('name')->get();
+        
         // Calculate summary statistics
         $stats = $this->getInvoiceStats();
         
         // Get user settings for currency
         $settings = Setting::forUser();
         
-        return view('invoices.index', compact('invoices', 'clients', 'stats', 'settings'));
+        return view('invoices.index', compact('invoices', 'clients', 'projects', 'stats', 'settings'));
     }
 
     /**
@@ -96,6 +108,7 @@ class InvoiceController extends Controller
     {
         $clients = Auth::user()->clients()->active()->orderBy('name')->get();
         $items = Auth::user()->items()->active()->orderBy('name')->get();
+        $projects = Auth::user()->projects()->orderBy('name')->get();
         
         // Generate next invoice number
         $invoiceNumber = Invoice::generateInvoiceNumber(Auth::id());
@@ -103,7 +116,7 @@ class InvoiceController extends Controller
         // Get user settings for currency
         $settings = Setting::forUser();
         
-        return view('invoices.create', compact('clients', 'items', 'invoiceNumber', 'settings'));
+        return view('invoices.create', compact('clients', 'items', 'projects', 'invoiceNumber', 'settings'));
     }
 
     /**
@@ -113,6 +126,7 @@ class InvoiceController extends Controller
     {
         $validated = $request->validate([
             'client_id' => 'required|exists:clients,id',
+            'project_id' => 'nullable|exists:projects,id',
             'invoice_number' => [
                 'required',
                 'string',
@@ -150,6 +164,11 @@ class InvoiceController extends Controller
         
         // Verify client belongs to user
         $client = Auth::user()->clients()->findOrFail($validated['client_id']);
+        
+        // Verify project belongs to user if provided
+        if ($validated['project_id']) {
+            $project = Auth::user()->projects()->findOrFail($validated['project_id']);
+        }
         
         DB::beginTransaction();
         
@@ -240,6 +259,7 @@ class InvoiceController extends Controller
     {
         $validated = $request->validate([
             'client_id' => 'required|exists:clients,id',
+            'project_id' => 'nullable|exists:projects,id',
             'invoice_number' => 'required|string|max:255',
             'invoice_date' => 'required|date',
             'due_date' => 'required|date',
@@ -267,6 +287,12 @@ class InvoiceController extends Controller
         // Load client
         $client = Client::find($validated['client_id']);
         $invoice->setRelation('client', $client);
+        
+        // Load project if provided
+        if ($validated['project_id']) {
+            $project = Project::find($validated['project_id']);
+            $invoice->setRelation('project', $project);
+        }
         
         // Create temporary invoice items
         $invoiceItems = collect();
@@ -332,11 +358,12 @@ class InvoiceController extends Controller
         $invoice->load(['invoiceItems']);
         $clients = Auth::user()->clients()->active()->orderBy('name')->get();
         $items = Auth::user()->items()->active()->orderBy('name')->get();
+        $projects = Auth::user()->projects()->orderBy('name')->get();
         
         // Get user settings for currency
         $settings = Setting::forUser();
         
-        return view('invoices.edit', compact('invoice', 'clients', 'items', 'settings'));
+        return view('invoices.edit', compact('invoice', 'clients', 'items', 'projects', 'settings'));
     }
 
     /**
@@ -357,6 +384,7 @@ class InvoiceController extends Controller
         
         $validated = $request->validate([
             'client_id' => 'required|exists:clients,id',
+            'project_id' => 'nullable|exists:projects,id',
             'invoice_number' => [
                 'required',
                 'string',
@@ -392,6 +420,11 @@ class InvoiceController extends Controller
         
         // Verify client belongs to user
         $client = Auth::user()->clients()->findOrFail($validated['client_id']);
+        
+        // Verify project belongs to user if provided
+        if ($validated['project_id']) {
+            $project = Auth::user()->projects()->findOrFail($validated['project_id']);
+        }
         
         DB::beginTransaction();
         
@@ -526,15 +559,34 @@ class InvoiceController extends Controller
             'payment_date' => 'required|date',
             'payment_method' => 'required|string|in:cash,bank_transfer,mobile_money,cheque',
             'payment_notes' => 'nullable|string|max:500',
+        ], [
+            'payment_method.required' => 'Please select a payment method.',
+            'payment_method.in' => 'Please select a valid payment method.',
         ]);
         
         DB::beginTransaction();
         try {
+            // Check for duplicate payment within the last 5 minutes
+            $recentPayment = InvoicePayment::where('invoice_id', $invoice->id)
+                ->where('amount', $validated['payment_amount'])
+                ->where('payment_method', $validated['payment_method'])
+                ->where('created_at', '>=', now()->subMinutes(5))
+                ->first();
+                
+            if ($recentPayment) {
+                DB::rollback();
+                return back()->with('error', 'Duplicate payment detected. Please wait a moment before adding another payment.');
+            }
+            
+            // Store old payment status for comparison
+            $oldPaymentStatus = $invoice->payment_status;
+            $oldPaidAmount = $invoice->paid_amount;
+            
             // Add payment to invoice
             $invoice->addPayment($validated['payment_amount']);
             
             // Create payment record
-            InvoicePayment::create([
+            $payment = InvoicePayment::create([
                 'invoice_id' => $invoice->id,
                 'amount' => $validated['payment_amount'],
                 'payment_date' => $validated['payment_date'],
@@ -543,12 +595,37 @@ class InvoiceController extends Controller
                 'created_by' => Auth::id()
             ]);
             
+            // Send email notifications
+            $notificationService = app(PaymentNotificationService::class);
+            
+            // Send payment received notification
+            $notificationService->sendPaymentReceivedNotification($invoice, $payment);
+            
             DB::commit();
-            return back()->with('success', 'Payment added successfully!');
+            return back()->with('success', 'Payment added successfully! Payment confirmation email has been sent.');
         } catch (\Exception $e) {
             DB::rollback();
             return back()->with('error', 'Failed to add payment: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Recalculate payment status for an invoice.
+     */
+    public function recalculatePayments(Invoice $invoice)
+    {
+        // Ensure the invoice belongs to the authenticated user
+        if ($invoice->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
+        
+        $originalStatus = $invoice->payment_status;
+        $originalBalance = $invoice->balance_due;
+        $originalPaid = $invoice->paid_amount;
+        
+        $invoice->recalculatePaymentStatus();
+        
+        return back()->with('success', "Payment status recalculated successfully! Status: {$originalStatus} → {$invoice->payment_status}, Balance: {$originalBalance} → {$invoice->balance_due}, Paid: {$originalPaid} → {$invoice->paid_amount}");
     }
 
     /**
@@ -563,107 +640,37 @@ class InvoiceController extends Controller
         
         $validated = $request->validate([
             'email' => 'required|email',
-            'subject' => 'required|string|max:255',
+            'subject' => 'nullable|string|max:255',
             'message' => 'nullable|string',
             'send_copy' => 'boolean',
         ]);
         
         try {
-            $settings = Setting::forUser();
-            $invoice->load(['client', 'invoiceItems.item']);
+            $success = $this->simpleEmailService->sendInvoice(
+                $invoice,
+                $validated['email'],
+                $validated['subject'] ?? null,
+                $validated['message'] ?? null,
+                $validated['send_copy'] ?? false
+            );
             
-            // Log email attempt
-            \Log::info('Attempting to send invoice email', [
-                'invoice_id' => $invoice->id,
-                'invoice_number' => $invoice->invoice_number,
-                'recipient_email' => $validated['email'],
-                'mail_driver' => config('mail.default'),
-                'mail_host' => config('mail.mailers.smtp.host'),
-                'mail_port' => config('mail.mailers.smtp.port'),
-                'mail_encryption' => config('mail.mailers.smtp.encryption'),
-            ]);
-            
-            // Generate PDF
-            $pdf = PDF::loadView('invoices.pdf', compact('invoice', 'settings'));
-            
-            // Prepare email data
-            $emailData = [
-                'invoice' => $invoice,
-                'settings' => $settings,
-                'email_message' => $validated['message'] ?? '',
-                'subject' => $validated['subject'],
-            ];
-            
-            // Send email
-            Mail::send('emails.invoice', $emailData, function ($mail) use ($validated, $invoice, $pdf, $settings, $emailData) {
-                $mail->to($validated['email'])
-                     ->subject($validated['subject'])
-                     ->attachData($pdf->output(), 'invoice-' . $invoice->invoice_number . '.pdf', [
-                         'mime' => 'application/pdf',
-                     ]);
-                
-                // Send copy to user if requested
-                if (isset($validated['send_copy']) && $validated['send_copy']) {
-                    $copyEmail = $settings->company_email ?? auth()->user()->email;
-                    $mail->cc($copyEmail);
-                    \Log::info('Sending copy to: ' . $copyEmail);
-                }
-                
-                // Set from address
-                $fromEmail = $settings->company_email ?? config('mail.from.address');
-                $fromName = $settings->company_name ?? config('mail.from.name');
-                $mail->from($fromEmail, $fromName);
-                
-                \Log::info('Email configured', [
-                    'from_email' => $fromEmail,
-                    'from_name' => $fromName,
-                    'to_email' => $validated['email'],
-                    'subject' => $validated['subject']
-                ]);
-            });
-            
-            // Update invoice status
-            if ($invoice->status === 'draft') {
-                $invoice->markAsSent();
-                \Log::info('Invoice status updated to sent for invoice: ' . $invoice->invoice_number);
+            if ($success) {
+                $testMode = config('app.debug') || config('app.env') === 'local';
+                $message = $testMode 
+                    ? 'Invoice sent successfully to mycosoftt@gmail.com (Test Mode)!'
+                    : 'Invoice sent successfully to ' . $validated['email'] . '!';
+                    
+                return back()->with('success', $message);
+            } else {
+                return back()->with('error', 'Failed to send invoice email. Please try again.');
             }
             
-            // Update last sent timestamp
-            $invoice->update([
-                'last_sent_at' => now(),
-            ]);
-            
-            \Log::info('Invoice email sent successfully', [
-                'invoice_id' => $invoice->id,
-                'invoice_number' => $invoice->invoice_number,
-                'recipient_email' => $validated['email']
-            ]);
-            
-            return back()->with('success', 'Invoice sent successfully to ' . $validated['email'] . '! Check your email logs for confirmation.');
-            
-        } catch (\Symfony\Component\Mailer\Exception\TransportException $e) {
-            \Log::error('SMTP Transport Error when sending invoice email', [
-                'invoice_id' => $invoice->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return back()->with('error', 'SMTP Error: Unable to connect to mail server. Please check your email configuration. Error: ' . $e->getMessage());
-            
-        } catch (\Swift_TransportException $e) {
-            \Log::error('Swift Transport Error when sending invoice email', [
-                'invoice_id' => $invoice->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return back()->with('error', 'Mail Transport Error: ' . $e->getMessage());
-            
         } catch (\Exception $e) {
-            \Log::error('General error when sending invoice email', [
+            \Log::error('Error sending invoice email', [
                 'invoice_id' => $invoice->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'error' => $e->getMessage()
             ]);
-            return back()->with('error', 'Failed to send invoice: ' . $e->getMessage());
+            return back()->with('error', 'Error sending email: ' . $e->getMessage());
         }
     }
     

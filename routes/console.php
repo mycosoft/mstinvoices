@@ -14,6 +14,19 @@ Schedule::command('reports:generate-scheduled')
     ->hourly()
     ->appendOutputTo(storage_path('logs/scheduled-reports.log'));
 
+// Schedule payment reminder commands
+// Send payment reminders 3 days before due date
+Schedule::command('invoices:send-reminders --days=3')
+    ->daily()
+    ->at('09:00')
+    ->appendOutputTo(storage_path('logs/payment-reminders.log'));
+
+// Send overdue payment notifications daily
+Schedule::command('invoices:send-overdue --days=1')
+    ->daily()
+    ->at('10:00')
+    ->appendOutputTo(storage_path('logs/overdue-notifications.log'));
+
 // Daily cleanup command for old report files
 Schedule::call(function () {
     // Clean up temporary report files older than 7 days

@@ -61,6 +61,34 @@
             font-size: 13px;
         }
         
+        .company-logo {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            max-width: 150px;
+            max-height: 80px;
+        }
+        
+        .company-logo img {
+            max-width: 100%;
+            max-height: 100%;
+            height: auto;
+            width: auto;
+        }
+        
+        .status-stamp {
+            position: absolute;
+            top: 60%;
+            left: 40%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            z-index: 10;
+            opacity: 0.8;
+        }
+        
+        .content {
+            position: relative;
+        }
+        
         .main-info {
             display: flex;
             justify-content: space-between;
@@ -116,10 +144,12 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 30px;
+            border: 2px solid #ddd;
         }
         
         .items-table th {
-            background: #f8f9fa;
+            background: #4472C4;
+            color: white;
             border: 1px solid #ddd;
             padding: 12px 8px;
             text-align: left;
@@ -129,7 +159,7 @@
         
         .items-table td {
             border: 1px solid #ddd;
-            padding: 10px 8px;
+            padding: 2px 8px;
             font-size: 13px;
             vertical-align: top;
         }
@@ -145,13 +175,17 @@
         .item-description {
             color: #666;
             font-size: 12px;
-            margin-top: 3px;
+            margin-top: 1px;
+            line-height: 1;
+            white-space: pre-line;
         }
         
         .totals {
             float: right;
             width: 300px;
             margin-bottom: 30px;
+            background: transparent;
+            padding: 0;
         }
         
         .totals table {
@@ -162,6 +196,7 @@
         .totals td {
             padding: 8px 0;
             font-size: 14px;
+            border: none;
         }
         
         .totals .label {
@@ -176,14 +211,15 @@
         }
         
         .total-row {
-            border-top: 2px solid #333;
-            border-bottom: 2px solid #333;
+            background: #4472C4;
+            color: white;
         }
         
         .total-row td {
             font-weight: bold;
             font-size: 16px;
-            padding: 12px 0;
+            padding: 12px 15px;
+            color: white;
         }
         
         .clearfix::after {
@@ -243,35 +279,65 @@
         
         .status-badge {
             display: inline-block;
-            padding: 4px 10px;
+            padding: 15px 25px;
             border-radius: 15px;
-            font-size: 11px;
+            font-size: 24px;
             font-weight: bold;
             text-transform: uppercase;
+            letter-spacing: 3px;
+            border: 4px solid;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 1;
         }
         
         .status-paid {
-            background: #28a745;
-            color: white;
-            border: 1px solid #1e7e34;
+            color: #28a745;
+            border-color: #28a745;
+            background: rgba(40, 167, 69, 0.1);
         }
         
         .status-pending {
-            background: #ffc107;
-            color: #212529;
-            border: 1px solid #e0a800;
+            color: #ffc107;
+            border-color: #ffc107;
+            background: rgba(255, 193, 7, 0.1);
+        }
+        
+        .status-sent {
+            color: #17a2b8;
+            border-color: #17a2b8;
+            background: rgba(23, 162, 184, 0.1);
+        }
+        
+        .status-viewed {
+            color: #6f42c1;
+            border-color: #6f42c1;
+            background: rgba(111, 66, 193, 0.1);
+        }
+        
+        .status-partial {
+            color: #fd7e14;
+            border-color: #fd7e14;
+            background: rgba(253, 126, 20, 0.1);
         }
         
         .status-overdue {
-            background: #dc3545;
-            color: white;
-            border: 1px solid #bd2130;
+            color: #dc3545;
+            border-color: #dc3545;
+            background: rgba(220, 53, 69, 0.1);
+        }
+        
+        .status-cancelled {
+            color: #6c757d;
+            border-color: #6c757d;
+            background: rgba(108, 117, 125, 0.1);
         }
         
         .status-draft {
-            background: #6c757d;
-            color: white;
-            border: 1px solid #545b62;
+            color: #6c757d;
+            border-color: #6c757d;
+            background: rgba(108, 117, 125, 0.1);
         }
         
         @media (max-width: 768px) {
@@ -320,6 +386,16 @@
         </div>
         
         <div class="content">
+            @if($settings->company_logo_path)
+                <div class="company-logo">
+                    <img src="{{ asset('storage/' . $settings->company_logo_path) }}" alt="{{ $settings->company_name ?? 'Company Logo' }}">
+                </div>
+            @endif
+            
+            <div class="status-stamp">
+                <span class="status-badge status-{{ $invoice->status }}">{{ ucfirst($invoice->status) }}</span>
+            </div>
+            
             <div class="company-info">
                 @if($settings->company_address)
                     <p>{{ $settings->company_address }}</p>
@@ -328,10 +404,16 @@
                     <p>{{ implode(', ', array_filter([$settings->company_city, $settings->company_state, $settings->company_postal_code])) }}</p>
                 @endif
                 @if($settings->company_phone)
-                    <p>{{ $settings->company_phone }}</p>
+                    <p>Tel: {{ $settings->company_phone }}</p>
                 @endif
                 @if($settings->company_email)
-                    <p>{{ $settings->company_email }}</p>
+                    <p>Email: {{ $settings->company_email }}</p>
+                @endif
+                @if($settings->company_website)
+                    <p>Website: {{ $settings->company_website }}</p>
+                @endif
+                @if($settings->company_tax_number)
+                    <p>Tax No: {{ $settings->company_tax_number }}</p>
                 @endif
             </div>
             
@@ -339,7 +421,7 @@
                 <div class="bill-to">
                     <h3>Bill To</h3>
                     <p><strong>{{ $invoice->client->display_name }}</strong></p>
-                    @if($invoice->client->company_name && $invoice->client->company_name !== $invoice->client->name)
+                    @if($invoice->client->company_name && $invoice->client->company_name !== $invoice->client->display_name)
                         <p>{{ $invoice->client->company_name }}</p>
                     @endif
                     @if($invoice->client->full_address)
@@ -364,12 +446,6 @@
                             <td class="label">Due Date</td>
                             <td class="value">{{ $invoice->due_date->format('d/m/Y') }}</td>
                         </tr>
-                        <tr>
-                            <td class="label">Status</td>
-                            <td class="value">
-                                <span class="status-badge status-{{ $invoice->status }}">{{ ucfirst($invoice->status) }}</span>
-                            </td>
-                        </tr>
                     </table>
                 </div>
             </div>
@@ -378,8 +454,6 @@
                 <thead>
                     <tr>
                         <th>Description</th>
-                        <th class="text-center">Qty</th>
-                        <th class="text-right">Unit Price</th>
                         <th class="text-right">Amount</th>
                     </tr>
                 </thead>
@@ -389,12 +463,10 @@
                         <td>
                             <strong>{{ $item->item_name }}</strong>
                             @if($item->item_description)
-                                <div class="item-description">{{ $item->item_description }}</div>
+                                <div class="item-description">{!! nl2br(e($item->item_description)) !!}</div>
                             @endif
                         </td>
-                        <td class="text-center">{{ $item->quantity }}</td>
-                        <td class="text-right">{{ $settings->formatCurrency($item->unit_price) }}</td>
-                        <td class="text-right">{{ $settings->formatCurrency($item->total_amount) }}</td>
+                        <td class="text-right">{!! $settings->formatCurrencyWithBreak($item->total_amount) !!}</td>
                     </tr>
                     @endforeach
                 </tbody>
@@ -404,17 +476,17 @@
                 <table>
                     <tr>
                         <td class="label">Subtotal:</td>
-                        <td class="amount">{{ $settings->formatCurrency($invoice->subtotal) }}</td>
+                        <td class="amount">{!! $settings->formatCurrencyWithBreak($invoice->subtotal) !!}</td>
                     </tr>
                     @if($invoice->tax_amount > 0)
                     <tr>
                         <td class="label">Tax:</td>
-                        <td class="amount">{{ $settings->formatCurrency($invoice->tax_amount) }}</td>
+                        <td class="amount">{!! $settings->formatCurrencyWithBreak($invoice->tax_amount) !!}</td>
                     </tr>
                     @endif
                     <tr class="total-row">
                         <td class="label">TOTAL:</td>
-                        <td class="amount">{{ $settings->formatCurrency($invoice->total_amount) }}</td>
+                        <td class="amount">{!! $settings->formatCurrencyWithBreak($invoice->total_amount) !!}</td>
                     </tr>
                 </table>
             </div>

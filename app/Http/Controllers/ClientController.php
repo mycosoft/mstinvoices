@@ -79,13 +79,27 @@ class ClientController extends Controller
             'country' => 'nullable|string|max:100',
             'tax_number' => 'nullable|string|max:50',
             'business_type' => 'nullable|string|max:100',
-            'status' => 'required|in:active,inactive',
+            'status' => 'nullable|in:active,inactive',
             'notes' => 'nullable|string',
         ]);
+        
+        // Set default status if not provided
+        if (!isset($validated['status'])) {
+            $validated['status'] = 'active';
+        }
         
         $validated['user_id'] = Auth::id();
         
         $client = Client::create($validated);
+        
+        // Check if request is AJAX (for modal form submission)
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Client created successfully!',
+                'client' => $client
+            ]);
+        }
         
         return redirect()->route('clients.show', $client)
                         ->with('success', 'Client created successfully!');

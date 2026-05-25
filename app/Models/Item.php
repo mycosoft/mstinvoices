@@ -5,9 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Item extends Model
 {
+    use LogsActivity;
     /**
      * The attributes that are mass assignable.
      *
@@ -25,6 +28,12 @@ class Item extends Model
         'tax_rate',
         'status',
         'is_service',
+        'track_inventory',
+        'stock_quantity',
+        'low_stock_alert',
+        'warehouse_location',
+        'reorder_point',
+        'reorder_quantity',
         'notes',
         'image_url',
     ];
@@ -40,6 +49,11 @@ class Item extends Model
         'tax_rate' => 'decimal:2',
         'is_taxable' => 'boolean',
         'is_service' => 'boolean',
+        'track_inventory' => 'boolean',
+        'stock_quantity' => 'integer',
+        'low_stock_alert' => 'integer',
+        'reorder_point' => 'integer',
+        'reorder_quantity' => 'integer',
     ];
 
     /**
@@ -56,6 +70,17 @@ class Item extends Model
     public function invoiceItems(): HasMany
     {
         return $this->hasMany(InvoiceItem::class);
+    }
+
+    public function stockMovements(): HasMany
+    {
+        return $this->hasMany(StockMovement::class);
+    }
+
+    public function scopeLowStock($query)
+    {
+        return $query->where('track_inventory', true)
+                     ->whereRaw('stock_quantity <= low_stock_alert');
     }
 
     /**
@@ -164,5 +189,13 @@ class Item extends Model
                   ->pluck('category')
                   ->sort()
                   ->values();
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'category', 'unit_price', 'cost_price', 'status', 'stock_quantity'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 }

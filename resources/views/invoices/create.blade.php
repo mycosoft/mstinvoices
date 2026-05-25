@@ -62,6 +62,30 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
+                                        <label for="project_id">Project</label>
+                                        <div class="input-group">
+                                            <select class="form-control @error('project_id') is-invalid @enderror" 
+                                                    id="project_id" name="project_id">
+                                                <option value="">Select a project (optional)</option>
+                                                @foreach($projects as $project)
+                                                    <option value="{{ $project->id }}" {{ old('project_id') == $project->id ? 'selected' : '' }}>
+                                                        {{ $project->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <div class="input-group-append">
+                                                <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#addProjectModal" title="Add New Project">
+                                                    <i class="fas fa-plus"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        @error('project_id')
+                                            <span class="invalid-feedback">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
                                         <label for="invoice_number">Invoice Number <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control @error('invoice_number') is-invalid @enderror" 
                                                id="invoice_number" name="invoice_number" 
@@ -102,7 +126,6 @@
                                         <select class="form-control @error('status') is-invalid @enderror" 
                                                 id="status" name="status" required>
                                             <option value="draft" {{ old('status', 'draft') == 'draft' ? 'selected' : '' }}>Draft</option>
-                                            <option value="pending" {{ old('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                                             <option value="sent" {{ old('status') == 'sent' ? 'selected' : '' }}>Sent</option>
                                             <option value="viewed" {{ old('status') == 'viewed' ? 'selected' : '' }}>Viewed</option>
                                         </select>
@@ -130,7 +153,8 @@
                                         <label for="currency">Currency <span class="text-danger">*</span></label>
                                         <select class="form-control @error('currency') is-invalid @enderror" 
                                                 id="currency" name="currency" required>
-                                            <option value="USD" {{ old('currency', 'USD') == 'USD' ? 'selected' : '' }}>USD</option>
+                                            <option value="UGX" {{ old('currency', 'UGX') == 'UGX' ? 'selected' : '' }}>UGX</option>
+                                            <option value="USD" {{ old('currency', 'UGX') == 'USD' ? 'selected' : '' }}>USD</option>
                                             <option value="EUR" {{ old('currency') == 'EUR' ? 'selected' : '' }}>EUR</option>
                                             <option value="GBP" {{ old('currency') == 'GBP' ? 'selected' : '' }}>GBP</option>
                                         </select>
@@ -182,9 +206,6 @@
                         <div class="card-footer">
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save"></i> Create Invoice
-                            </button>
-                            <button type="button" class="btn btn-info" id="preview-invoice" disabled>
-                                <i class="fas fa-eye"></i> Preview
                             </button>
                             <a href="{{ route('invoices.index') }}" class="btn btn-secondary">
                                 <i class="fas fa-times"></i> Cancel
@@ -248,6 +269,78 @@
             </div>
         </form>
     </div>
+
+    <!-- Add Project Modal -->
+    <div class="modal fade" id="addProjectModal" tabindex="-1" role="dialog" aria-labelledby="addProjectModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addProjectModalLabel">Add New Project</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="addProjectForm" method="POST" action="{{ route('projects.store') }}">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="alert alert-danger d-none" id="projectFormErrors"></div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="modal_project_name">Project Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="modal_project_name" name="name" required placeholder="Enter project name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="modal_project_client">Client</label>
+                                    <select class="form-control" id="modal_project_client" name="client_id">
+                                        <option value="">Select client (optional)</option>
+                                        @foreach($clients as $client)
+                                            <option value="{{ $client->id }}">{{ $client->display_name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="modal_project_status">Status</label>
+                                    <select class="form-control" id="modal_project_status" name="status">
+                                        <option value="pending">Pending</option>
+                                        <option value="in_progress">In Progress</option>
+                                        <option value="completed">Completed</option>
+                                        <option value="cancelled">Cancelled</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="modal_project_start_date">Start Date</label>
+                                    <input type="date" class="form-control" id="modal_project_start_date" name="start_date">
+                                </div>
+                                <div class="form-group">
+                                    <label for="modal_project_end_date">End Date</label>
+                                    <input type="date" class="form-control" id="modal_project_end_date" name="end_date">
+                                </div>
+                                <div class="form-group">
+                                    <label for="modal_project_budget">Budget</label>
+                                    <input type="number" step="0.01" min="0" class="form-control" id="modal_project_budget" name="budget" placeholder="0.00">
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="modal_project_description">Description</label>
+                                    <textarea class="form-control" id="modal_project_description" name="description" rows="3" placeholder="Enter project description"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="saveProjectBtn">
+                            <i class="fas fa-save"></i> Create Project
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 @stop
 
 @section('css')
@@ -280,25 +373,44 @@
 
 @section('js')
     <script>
-        let itemCounter = 0;
-        
-        // Currency settings from server
-        const currencySymbol = '{{ $settings->currency_symbol }}';
-        const currencyPosition = '{{ $settings->currency_position }}';
-        
-        function formatCurrency(amount) {
-            const formatted = parseFloat(amount).toFixed(2);
-            if (currencyPosition === 'before') {
-                return currencySymbol + formatted;
+        // Ensure jQuery is loaded before running the script
+        function initInvoiceCreate() {
+            if (typeof $ === 'undefined') {
+                console.log('jQuery not loaded yet, retrying in 100ms...');
+                setTimeout(initInvoiceCreate, 100);
+                return;
             }
-            return formatted + currencySymbol;
-        }
-        
-        $(document).ready(function() {
+            
+            console.log('jQuery loaded successfully for invoice create');
+            
+            let itemCounter = 0;
+            
+            // Currency settings from server
+            const currencySymbol = '{{ $settings->currency_symbol }}';
+            const currencyPosition = '{{ $settings->currency_position }}';
+            
+            function formatCurrency(amount) {
+                const currency = $('#currency').val() || 'UGX';
+                return currency + ' ' + amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+            }
+            
+            $(document).ready(function() {
             addInvoiceItem();
             
             $('#add-item').click(function() {
                 addInvoiceItem();
+            });
+            
+            // Add from catalog button functionality
+            $('#add-from-catalog').click(function() {
+                // Scroll to the catalog section and highlight it
+                $('html, body').animate({
+                    scrollTop: $('#catalog-items').offset().top - 100
+                }, 500);
+                $('#catalog-items').focus().addClass('border-primary');
+                setTimeout(() => {
+                    $('#catalog-items').removeClass('border-primary');
+                }, 2000);
             });
             
             $('#add-catalog-item').click(function() {
@@ -320,9 +432,8 @@
                     addInvoiceItem();
                 }
             });
-        });
-        
-        function addInvoiceItem(data = {}) {
+            
+            function addInvoiceItem(data = {}) {
             const itemHtml = `
                 <div class="invoice-item" data-item="${itemCounter}">
                     <div class="item-header">
@@ -341,8 +452,9 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>Description</label>
-                                <input type="text" name="items[${itemCounter}][item_description]" 
-                                       class="form-control" value="${data.description || ''}">
+                                <textarea name="items[${itemCounter}][item_description]" 
+                                          class="form-control" rows="2" 
+                                          placeholder="Item description...">${data.description || ''}</textarea>
                             </div>
                         </div>
                     </div>
@@ -404,9 +516,9 @@
             $('#invoice-items').append(itemHtml);
             itemCounter++;
             calculateTotals();
-        }
-        
-        function addItemFromCatalog(option) {
+            }
+            
+            function addItemFromCatalog(option) {
             const data = {
                 id: option.val(),
                 name: option.data('name'),
@@ -418,9 +530,9 @@
             };
             
             addInvoiceItem(data);
-        }
-        
-        function calculateTotals() {
+            }
+            
+            function calculateTotals() {
             let subtotal = 0;
             let totalTax = 0;
             
@@ -448,62 +560,69 @@
             $('#subtotal').text(formatCurrency(subtotal));
             $('#tax-amount').text(formatCurrency(totalTax));
             $('#total-amount').text(formatCurrency(total));
-            
-            // Enable preview button if form has data
-            checkFormValidity();
-        }
-        
-        function checkFormValidity() {
-            const hasClient = $('#client_id').val();
-            const hasItems = $('.invoice-item').length > 0;
-            const hasValidItems = $('.invoice-item').toArray().some(item => {
-                const name = $(item).find('input[name$="[item_name]"]').val();
-                const price = $(item).find('input[name$="[unit_price]"]').val();
-                const quantity = $(item).find('input[name$="[quantity]"]').val();
-                return name && price && quantity;
-            });
-            
-            if (hasClient && hasItems && hasValidItems) {
-                $('#preview-invoice').prop('disabled', false);
-            } else {
-                $('#preview-invoice').prop('disabled', true);
             }
+        });
         }
         
-        // Preview invoice functionality
-        $('#preview-invoice').click(function() {
-            // Create a temporary form to submit for preview
-            const form = $('#invoice-form')[0];
-            const formData = new FormData(form);
+        // Start the initialization
+        initInvoiceCreate();
+
+        // Handle modal project form submission via AJAX
+        $('#addProjectForm').on('submit', function(e) {
+            e.preventDefault();
             
-            // Add preview flag
-            formData.append('preview', '1');
+            var form = $(this);
+            var submitBtn = $('#saveProjectBtn');
+            var errorAlert = $('#projectFormErrors');
             
-            // Submit form data to preview endpoint
+            // Reset error display
+            errorAlert.addClass('d-none').html('');
+            
+            submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+            
             $.ajax({
-                url: '{{ route("invoices.preview-form") }}',
-                method: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
+                url: form.attr('action'),
+                type: 'POST',
+                data: form.serialize(),
                 success: function(response) {
-                    // Open preview in new window
-                    const previewWindow = window.open('', '_blank');
-                    previewWindow.document.write(response);
-                    previewWindow.document.close();
+                    // Add new project to dropdown
+                    var newOption = new Option(response.project.name, response.project.id, true, true);
+                    $('#project_id').append(newOption).val(response.project.id);
+                    
+                    // Close modal and reset form
+                    $('#addProjectModal').modal('hide');
+                    form[0].reset();
+                    
+                    // Show success message
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success('Project created successfully!');
+                    } else {
+                        alert('Project created successfully!');
+                    }
                 },
-                error: function() {
-                    alert('Error generating preview. Please check your form data.');
+                error: function(xhr) {
+                    var errors = xhr.responseJSON?.errors;
+                    if (errors) {
+                        var errorHtml = '<ul class="mb-0">';
+                        $.each(errors, function(key, value) {
+                            errorHtml += '<li>' + value + '</li>';
+                        });
+                        errorHtml += '</ul>';
+                        errorAlert.removeClass('d-none').html(errorHtml);
+                    } else {
+                        errorAlert.removeClass('d-none').html('<ul class="mb-0"><li>An error occurred. Please try again.</li></ul>');
+                    }
+                },
+                complete: function() {
+                    submitBtn.prop('disabled', false).html('<i class="fas fa-save"></i> Create Project');
                 }
             });
         });
         
-        // Check form validity on input changes
-        $(document).on('input change', 'select, input', function() {
-            checkFormValidity();
+        // Reset form when modal is closed
+        $('#addProjectModal').on('hidden.bs.modal', function() {
+            $('#addProjectForm')[0].reset();
+            $('#projectFormErrors').addClass('d-none');
         });
     </script>
 @stop

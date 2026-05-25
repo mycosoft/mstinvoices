@@ -442,6 +442,16 @@
 
 @section('js')
 <script>
+// Ensure jQuery is loaded before running the script
+function initQuotationEdit() {
+    if (typeof $ === 'undefined') {
+        console.log('jQuery not loaded yet, retrying in 100ms...');
+        setTimeout(initQuotationEdit, 100);
+        return;
+    }
+    
+    console.log('jQuery loaded successfully for quotation edit');
+    
 $(document).ready(function() {
     let itemIndex = {{ count($quotation->quotationItems) }};
     const isReadonly = {{ in_array($quotation->status, ['accepted', 'converted']) ? 'true' : 'false' }};
@@ -608,5 +618,9 @@ $(document).ready(function() {
     // Initial calculation
     recalculateTotals();
 });
+}
+
+// Start the initialization
+initQuotationEdit();
 </script>
 @stop

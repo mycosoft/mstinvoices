@@ -42,7 +42,7 @@
 
 <div class="row">
     <div class="col-12">
-        <form action="{{ route('settings.update') }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('settings.update') }}" method="POST" enctype="multipart/form-data" id="settings-form">
             @csrf
             @method('PUT')
             
@@ -208,10 +208,6 @@
                                        onclick="event.preventDefault(); if(confirm('Remove logo?')) { document.getElementById('remove-logo-form').submit(); }">
                                         <i class="fas fa-trash"></i> Remove Logo
                                     </a>
-                                    <form id="remove-logo-form" action="{{ route('settings.remove-logo') }}" method="POST" style="display: none;">
-                                        @csrf
-                                        @method('DELETE')
-                                    </form>
                                 </div>
                             @endif
                         </div>
@@ -228,7 +224,7 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-group">
                                 <label for="default_currency">Default Currency <span class="text-danger">*</span></label>
                                 <select class="form-control @error('default_currency') is-invalid @enderror" 
@@ -246,7 +242,7 @@
                                 @enderror
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-group">
                                 <label for="currency_symbol">Currency Symbol <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control @error('currency_symbol') is-invalid @enderror" 
@@ -256,7 +252,7 @@
                                 @enderror
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-group">
                                 <label for="currency_position">Currency Position <span class="text-danger">*</span></label>
                                 <select class="form-control @error('currency_position') is-invalid @enderror" 
@@ -265,6 +261,20 @@
                                     <option value="after" {{ old('currency_position', $settings->currency_position) == 'after' ? 'selected' : '' }}>After Amount (100$)</option>
                                 </select>
                                 @error('currency_position')
+                                    <span class="invalid-feedback">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="currency_decimal_places">Currency Decimal Places <span class="text-danger">*</span></label>
+                                <select class="form-control @error('currency_decimal_places') is-invalid @enderror" 
+                                        id="currency_decimal_places" name="currency_decimal_places" required>
+                                    <option value="0" {{ old('currency_decimal_places', $settings->currency_decimal_places ?? 0) == 0 ? 'selected' : '' }}>0 (1000)</option>
+                                    <option value="1" {{ old('currency_decimal_places', $settings->currency_decimal_places ?? 0) == 1 ? 'selected' : '' }}>1 (1000.0)</option>
+                                    <option value="2" {{ old('currency_decimal_places', $settings->currency_decimal_places ?? 0) == 2 ? 'selected' : '' }}>2 (1000.00)</option>
+                                </select>
+                                @error('currency_decimal_places')
                                     <span class="invalid-feedback">{{ $message }}</span>
                                 @enderror
                             </div>
@@ -358,6 +368,130 @@
                                 @error('default_invoice_footer')
                                     <span class="invalid-feedback">{{ $message }}</span>
                                 @enderror
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Expense Settings -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-receipt"></i> Expense Settings
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="expense_prefix">Expense Prefix <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control @error('expense_prefix') is-invalid @enderror" 
+                                       id="expense_prefix" name="expense_prefix" value="{{ old('expense_prefix', $settings->expense_prefix) }}" required>
+                                @error('expense_prefix')
+                                    <span class="invalid-feedback">{{ $message }}</span>
+                                @enderror
+                                <small class="form-text text-muted">Example: EXP, EXPENSE, etc.</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="expense_number_length">Expense Number Length <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control @error('expense_number_length') is-invalid @enderror" 
+                                       id="expense_number_length" name="expense_number_length" 
+                                       value="{{ old('expense_number_length', $settings->expense_number_length) }}" min="3" max="10" required>
+                                @error('expense_number_length')
+                                    <span class="invalid-feedback">{{ $message }}</span>
+                                @enderror
+                                <small class="form-text text-muted">Number of digits (3-10)</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="default_expense_tax_rate">Default Expense Tax Rate (%)</label>
+                                <input type="number" class="form-control @error('default_expense_tax_rate') is-invalid @enderror" 
+                                       id="default_expense_tax_rate" name="default_expense_tax_rate" 
+                                       value="{{ old('default_expense_tax_rate', $settings->default_expense_tax_rate) }}" 
+                                       min="0" max="100" step="0.01">
+                                @error('default_expense_tax_rate')
+                                    <span class="invalid-feedback">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="expense_requires_approval" 
+                                           name="expense_requires_approval" value="1" 
+                                           {{ old('expense_requires_approval', $settings->expense_requires_approval) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="expense_requires_approval">
+                                        Require approval for expenses
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="expense_approval_threshold">Approval Threshold Amount</label>
+                                <input type="number" class="form-control @error('expense_approval_threshold') is-invalid @enderror" 
+                                       id="expense_approval_threshold" name="expense_approval_threshold" 
+                                       value="{{ old('expense_approval_threshold', $settings->expense_approval_threshold) }}" 
+                                       min="0" step="0.01">
+                                @error('expense_approval_threshold')
+                                    <span class="invalid-feedback">{{ $message }}</span>
+                                @enderror
+                                <small class="form-text text-muted">Expenses above this amount require approval (leave empty for all expenses)</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quotation Settings -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-file-alt"></i> Quotation Settings
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="quotation_prefix">Quotation Prefix <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control @error('quotation_prefix') is-invalid @enderror" 
+                                       id="quotation_prefix" name="quotation_prefix" value="{{ old('quotation_prefix', $settings->quotation_prefix) }}" required>
+                                @error('quotation_prefix')
+                                    <span class="invalid-feedback">{{ $message }}</span>
+                                @enderror
+                                <small class="form-text text-muted">Example: QUO, QUOTE, etc.</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="quotation_number_length">Quotation Number Length <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control @error('quotation_number_length') is-invalid @enderror" 
+                                       id="quotation_number_length" name="quotation_number_length" 
+                                       value="{{ old('quotation_number_length', $settings->quotation_number_length) }}" min="3" max="10" required>
+                                @error('quotation_number_length')
+                                    <span class="invalid-feedback">{{ $message }}</span>
+                                @enderror
+                                <small class="form-text text-muted">Number of digits (3-10)</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="next_quotation_number">Next Quotation Number <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control @error('next_quotation_number') is-invalid @enderror" 
+                                       id="next_quotation_number" name="next_quotation_number" 
+                                       value="{{ old('next_quotation_number', $settings->next_quotation_number) }}" min="1" required>
+                                @error('next_quotation_number')
+                                    <span class="invalid-feedback">{{ $message }}</span>
+                                @enderror
+                                <small class="form-text text-muted">Starting number for new quotations</small>
                             </div>
                         </div>
                     </div>
@@ -481,6 +615,13 @@
         </form>
     </div>
 </div>
+
+<!-- Remove Logo Form (outside main form to avoid nested forms) -->
+<form id="remove-logo-form" action="{{ route('settings.remove-logo') }}" method="POST" style="display: none;">
+    @csrf
+    @method('DELETE')
+</form>
+
 @stop
 
 @section('js')

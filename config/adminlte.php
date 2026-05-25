@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'title' => 'MST Invoices',
+    'title' => 'MST ERP SYSTEM',
     'title_prefix' => '',
     'title_postfix' => '',
 
@@ -63,12 +63,12 @@ return [
     |
     */
 
-    'logo' => 'MST INVOICES',
-    'logo_img' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
+    'logo' => 'MYCOSOFT TECHNOLOGIES',
+    'logo_img' => '',
     'logo_img_class' => 'brand-image img-circle elevation-3',
     'logo_img_xl' => null,
     'logo_img_xl_class' => 'brand-image-xs',
-    'logo_img_alt' => 'Admin Logo',
+    'logo_img_alt' => '',
 
     /*
     |--------------------------------------------------------------------------
@@ -315,121 +315,200 @@ return [
             'type' => 'sidebar-menu-search',
             'text' => 'search',
         ],
+        
+        // MAIN DASHBOARD
         [
             'text' => 'Dashboard',
             'url' => 'dashboard',
-            'icon' => 'fas fa-fw fa-tachometer-alt',
+            'icon' => 'fas fa-fw fa-home',
         ],
-        ['header' => 'INVOICE MANAGEMENT'],
+        
+        ['header' => 'SALES & INVOICING'],
         [
-            'text' => 'All Invoices',
-            'url' => 'invoices',
-            'icon' => 'fas fa-fw fa-file-invoice',
-        ],
-        [
-            'text' => 'Create Invoice',
-            'url' => 'invoices/create',
-            'icon' => 'fas fa-fw fa-plus-circle',
-        ],
-        [
-            'text' => 'Draft Invoices',
-            'url' => 'invoices?status=draft',
-            'icon' => 'fas fa-fw fa-edit',
-        ],
-        [
-            'text' => 'Sent Invoices',
-            'url' => 'invoices?status=sent',
-            'icon' => 'fas fa-fw fa-paper-plane',
-            'label_color' => 'info',
-        ],
-        [
-            'text' => 'Paid Invoices',
-            'url' => 'invoices?payment_status=paid',
-            'icon' => 'fas fa-fw fa-check-circle',
-            'label_color' => 'success',
-        ],
-        [
-            'text' => 'Pending Invoices',
-            'url' => 'invoices?payment_status=unpaid',
-            'icon' => 'fas fa-fw fa-clock',
-            'label_color' => 'warning',
-        ],
-        [
-            'text' => 'Overdue Invoices',
-            'url' => 'invoices?overdue=1',
-            'icon' => 'fas fa-fw fa-exclamation-triangle',
-            'label_color' => 'danger',
-        ],
-        ['header' => 'QUOTATION MANAGEMENT'],
-        [
-            'text' => 'All Quotations',
-            'url' => 'quotations',
-            'icon' => 'fas fa-fw fa-file-alt',
+            'text' => 'Invoices',
+            'icon' => 'fas fa-fw fa-file-invoice-dollar',
+            'submenu' => [
+                [
+                    'text' => 'All Invoices',
+                    'url' => 'invoices',
+                    'icon' => 'fas fa-fw fa-list',
+                ],
+                [
+                    'text' => 'Create Invoice',
+                    'url' => 'invoices/create',
+                    'icon' => 'fas fa-fw fa-plus',
+                ],
+                [
+                    'text' => 'Sent Invoices',
+                    'url' => 'invoices?status=sent',
+                    'icon' => 'fas fa-fw fa-paper-plane',
+                    'label_color' => 'info',
+                ],
+                [
+                    'text' => 'Paid Invoices',
+                    'url' => 'invoices?payment_status=paid',
+                    'icon' => 'fas fa-fw fa-check-circle',
+                    'label_color' => 'success',
+                ],
+                [
+                    'text' => 'Overdue Invoices',
+                    'url' => 'invoices?overdue=1',
+                    'icon' => 'fas fa-fw fa-exclamation-triangle',
+                    'label_color' => 'danger',
+                ],
+            ],
         ],
         [
-            'text' => 'Create Quotation',
-            'url' => 'quotations/create',
-            'icon' => 'fas fa-fw fa-plus-circle',
+            'text' => 'Quotations',
+            'icon' => 'fas fa-fw fa-file-contract',
+            'submenu' => [
+                [
+                    'text' => 'All Quotations',
+                    'url' => 'quotations',
+                    'icon' => 'fas fa-fw fa-list',
+                ],
+                [
+                    'text' => 'Create Quotation',
+                    'url' => 'quotations/create',
+                    'icon' => 'fas fa-fw fa-plus',
+                ],
+                [
+                    'text' => 'Sent Quotations',
+                    'url' => 'quotations?status=sent',
+                    'icon' => 'fas fa-fw fa-paper-plane',
+                    'label_color' => 'info',
+                ],
+                [
+                    'text' => 'Accepted Quotations',
+                    'url' => 'quotations?status=accepted',
+                    'icon' => 'fas fa-fw fa-check-circle',
+                    'label_color' => 'success',
+                ],
+            ],
         ],
+        
+        ['header' => 'BUSINESS MANAGEMENT'],
         [
-            'text' => 'Draft Quotations',
-            'url' => 'quotations?status=draft',
-            'icon' => 'fas fa-fw fa-edit',
-        ],
-        [
-            'text' => 'Sent Quotations',
-            'url' => 'quotations?status=sent',
-            'icon' => 'fas fa-fw fa-paper-plane',
-            'label_color' => 'info',
-        ],
-        [
-            'text' => 'Accepted Quotations',
-            'url' => 'quotations?status=accepted',
-            'icon' => 'fas fa-fw fa-check-circle',
-            'label_color' => 'success',
-        ],
-        [
-            'text' => 'Expired Quotations',
-            'url' => 'quotations?expired=1',
-            'icon' => 'fas fa-fw fa-clock',
-            'label_color' => 'warning',
-        ],
-        ['header' => 'CLIENT MANAGEMENT'],
-        [
-            'text' => 'All Clients',
-            'url' => 'clients',
+            'text' => 'Clients',
             'icon' => 'fas fa-fw fa-users',
+            'submenu' => [
+                [
+                    'text' => 'All Clients',
+                    'url' => 'clients',
+                    'icon' => 'fas fa-fw fa-list',
+                ],
+                [
+                    'text' => 'Add Client',
+                    'url' => 'clients/create',
+                    'icon' => 'fas fa-fw fa-user-plus',
+                ],
+            ],
         ],
         [
-            'text' => 'Add Client',
-            'url' => 'clients/create',
-            'icon' => 'fas fa-fw fa-user-plus',
+            'text' => 'Projects',
+            'icon' => 'fas fa-fw fa-project-diagram',
+            'submenu' => [
+                [
+                    'text' => 'Project Dashboard',
+                    'url' => 'projects-dashboard',
+                    'icon' => 'fas fa-fw fa-tachometer-alt',
+                ],
+                [
+                    'text' => 'All Projects',
+                    'url' => 'projects',
+                    'icon' => 'fas fa-fw fa-list',
+                ],
+                [
+                    'text' => 'Create Project',
+                    'url' => 'projects/create',
+                    'icon' => 'fas fa-fw fa-plus',
+                ],
+            ],
         ],
-        ['header' => 'SERVICE MANAGEMENT'],
         [
-            'text' => 'All Services',
-            'url' => 'items',
-            'icon' => 'fas fa-fw fa-handshake',
+            'text' => 'Services',
+            'icon' => 'fas fa-fw fa-cogs',
+            'submenu' => [
+                [
+                    'text' => 'All Services',
+                    'url' => 'items',
+                    'icon' => 'fas fa-fw fa-list',
+                ],
+                [
+                    'text' => 'Add Service',
+                    'url' => 'items/create',
+                    'icon' => 'fas fa-fw fa-plus',
+                ],
+            ],
         ],
         [
-            'text' => 'Add Service',
-            'url' => 'items/create',
-            'icon' => 'fas fa-fw fa-plus-square',
+            'text' => 'Domain Management',
+            'icon' => 'fas fa-fw fa-globe',
+            'submenu' => [
+                [
+                    'text' => 'All Domains',
+                    'url' => 'domains',
+                    'icon' => 'fas fa-fw fa-list',
+                ],
+                [
+                    'text' => 'Add Domain',
+                    'url' => 'domains/create',
+                    'icon' => 'fas fa-fw fa-plus',
+                ],
+                [
+                    'text' => 'Expiring Soon',
+                    'url' => 'domains?expiry_filter=expiring_soon',
+                    'icon' => 'fas fa-fw fa-exclamation-triangle',
+                    'label_color' => 'warning',
+                ],
+                [
+                    'text' => 'Expired Domains',
+                    'url' => 'domains?expiry_filter=expired',
+                    'icon' => 'fas fa-fw fa-times-circle',
+                    'label_color' => 'danger',
+                ],
+            ],
         ],
-        ['header' => 'REPORTS & SETTINGS'],
+        
+        ['header' => 'FINANCIAL MANAGEMENT'],
+        [
+            'text' => 'Expenses',
+            'icon' => 'fas fa-fw fa-receipt',
+            'submenu' => [
+                [
+                    'text' => 'All Expenses',
+                    'url' => 'expenses',
+                    'icon' => 'fas fa-fw fa-list',
+                ],
+                [
+                    'text' => 'Create Expense',
+                    'url' => 'expenses/create',
+                    'icon' => 'fas fa-fw fa-plus',
+                ],
+                [
+                    'text' => 'Approved Expenses',
+                    'url' => 'expenses?status=approved',
+                    'icon' => 'fas fa-fw fa-check-circle',
+                    'label_color' => 'success',
+                ],
+                [
+                    'text' => 'Paid Expenses',
+                    'url' => 'expenses?payment_status=paid',
+                    'icon' => 'fas fa-fw fa-check-double',
+                    'label_color' => 'success',
+                ],
+            ],
+        ],
+        
+        ['header' => 'ANALYTICS & REPORTS'],
         [
             'text' => 'Quick Reports',
-            'icon' => 'fas fa-fw fa-tachometer-alt',
+            'icon' => 'fas fa-fw fa-chart-line',
             'submenu' => [
                 [
                     'text' => 'Revenue Report',
                     'url' => 'reports/quick/revenue',
                     'icon' => 'fas fa-fw fa-dollar-sign',
-                ],
-                [
-                    'text' => 'Client Report',
-                    'url' => 'reports/quick/client',
-                    'icon' => 'fas fa-fw fa-user-friends',
                 ],
                 [
                     'text' => 'Monthly Report',
@@ -442,24 +521,29 @@ return [
                     'icon' => 'fas fa-fw fa-calendar',
                 ],
                 [
-                    'text' => 'Overdue Invoices',
-                    'url' => 'reports/quick/overdue-invoices',
-                    'icon' => 'fas fa-fw fa-exclamation-triangle',
+                    'text' => 'Client Report',
+                    'url' => 'reports/quick/client',
+                    'icon' => 'fas fa-fw fa-user-friends',
                 ],
                 [
                     'text' => 'Cash Flow',
                     'url' => 'reports/quick/cash-flow',
-                    'icon' => 'fas fa-fw fa-chart-line',
+                    'icon' => 'fas fa-fw fa-chart-area',
                 ],
                 [
                     'text' => 'Top Clients',
                     'url' => 'reports/quick/top-clients',
                     'icon' => 'fas fa-fw fa-trophy',
                 ],
+                [
+                    'text' => 'Overdue Analysis',
+                    'url' => 'reports/quick/overdue-invoices',
+                    'icon' => 'fas fa-fw fa-exclamation-triangle',
+                ],
             ],
         ],
         [
-            'text' => 'Saved Reports',
+            'text' => 'Custom Reports',
             'icon' => 'fas fa-fw fa-chart-bar',
             'submenu' => [
                 [
@@ -470,7 +554,7 @@ return [
                 [
                     'text' => 'Create Report',
                     'url' => 'reports/create',
-                    'icon' => 'fas fa-fw fa-plus-circle',
+                    'icon' => 'fas fa-fw fa-plus',
                 ],
                 [
                     'text' => 'Revenue Reports',
@@ -483,21 +567,173 @@ return [
                     'icon' => 'fas fa-fw fa-user-friends',
                 ],
                 [
-                    'text' => 'Monthly Reports',
+                    'text' => 'Time-based Reports',
                     'url' => 'reports?type=monthly',
-                    'icon' => 'fas fa-fw fa-calendar-alt',
+                    'icon' => 'fas fa-fw fa-clock',
+                ],
+            ],
+        ],
+        
+        ['header' => 'POINT OF SALE'],
+        [
+            'text' => 'POS Terminal',
+            'url' => 'pos/terminal',
+            'icon' => 'fas fa-fw fa-cash-register',
+            'label_color' => 'success',
+        ],
+        [
+            'text' => 'POS Sales',
+            'url' => 'pos',
+            'icon' => 'fas fa-fw fa-shopping-bag',
+        ],
+        [
+            'text' => 'Daily Summary',
+            'url' => 'pos-daily-summary',
+            'icon' => 'fas fa-fw fa-calendar-day',
+        ],
+        
+        ['header' => 'PURCHASES & SUPPLIERS'],
+        [
+            'text' => 'Purchases',
+            'icon' => 'fas fa-fw fa-truck-loading',
+            'submenu' => [
+                [
+                    'text' => 'All Purchases',
+                    'url' => 'purchases',
+                    'icon' => 'fas fa-fw fa-list',
                 ],
                 [
-                    'text' => 'Yearly Reports',
-                    'url' => 'reports?type=yearly',
-                    'icon' => 'fas fa-fw fa-calendar',
+                    'text' => 'Create Purchase',
+                    'url' => 'purchases/create',
+                    'icon' => 'fas fa-fw fa-plus',
                 ],
             ],
         ],
         [
+            'text' => 'Suppliers',
+            'icon' => 'fas fa-fw fa-truck',
+            'submenu' => [
+                [
+                    'text' => 'All Suppliers',
+                    'url' => 'suppliers',
+                    'icon' => 'fas fa-fw fa-list',
+                ],
+                [
+                    'text' => 'Add Supplier',
+                    'url' => 'suppliers/create',
+                    'icon' => 'fas fa-fw fa-plus',
+                ],
+            ],
+        ],
+        
+        ['header' => 'INVENTORY'],
+        [
+            'text' => 'Stock Overview',
+            'url' => 'inventory',
+            'icon' => 'fas fa-fw fa-cubes',
+        ],
+        [
+            'text' => 'Stock Adjustments',
+            'url' => 'inventory/adjustments',
+            'icon' => 'fas fa-fw fa-sliders-h',
+        ],
+        [
+            'text' => 'Stock Movements',
+            'url' => 'inventory/movements',
+            'icon' => 'fas fa-fw fa-exchange-alt',
+        ],
+        [
+            'text' => 'Low Stock Alerts',
+            'url' => 'inventory/low-stock',
+            'icon' => 'fas fa-fw fa-exclamation-triangle',
+            'label_color' => 'danger',
+        ],
+        
+        ['header' => 'ACCOUNTING'],
+        [
+            'text' => 'Chart of Accounts',
+            'icon' => 'fas fa-fw fa-book',
+            'submenu' => [
+                [
+                    'text' => 'All Accounts',
+                    'url' => 'accounts',
+                    'icon' => 'fas fa-fw fa-list',
+                ],
+                [
+                    'text' => 'New Account',
+                    'url' => 'accounts/create',
+                    'icon' => 'fas fa-fw fa-plus',
+                ],
+            ],
+        ],
+        [
+            'text' => 'Journal Entries',
+            'icon' => 'fas fa-fw fa-journal-whills',
+            'submenu' => [
+                [
+                    'text' => 'All Entries',
+                    'url' => 'journal-entries',
+                    'icon' => 'fas fa-fw fa-list',
+                ],
+                [
+                    'text' => 'New Entry',
+                    'url' => 'journal-entries/create',
+                    'icon' => 'fas fa-fw fa-plus',
+                ],
+            ],
+        ],
+        
+        ['header' => 'FINANCIAL REPORTS'],
+        [
+            'text' => 'Trial Balance',
+            'url' => 'financial-reports/trial-balance',
+            'icon' => 'fas fa-fw fa-balance-scale',
+        ],
+        [
+            'text' => 'Income Statement',
+            'url' => 'financial-reports/income-statement',
+            'icon' => 'fas fa-fw fa-chart-line',
+        ],
+        [
+            'text' => 'Balance Sheet',
+            'url' => 'financial-reports/balance-sheet',
+            'icon' => 'fas fa-fw fa-file-invoice',
+        ],
+        [
+            'text' => 'Cash Flow',
+            'url' => 'financial-reports/cash-flow',
+            'icon' => 'fas fa-fw fa-money-bill-wave',
+        ],
+        [
+            'text' => 'General Ledger',
+            'url' => 'financial-reports/general-ledger',
+            'icon' => 'fas fa-fw fa-book',
+        ],
+        [
+            'text' => 'Journal Report',
+            'url' => 'financial-reports/journal-report',
+            'icon' => 'fas fa-fw fa-scroll',
+        ],
+        
+        ['header' => 'SYSTEM'],
+        [
             'text' => 'Settings',
             'url' => 'settings',
             'icon' => 'fas fa-fw fa-cog',
+        ],
+        
+        ['header' => 'ACCESS CONTROL'],
+        [
+            'text' => 'Users',
+            'url' => 'users',
+            'icon' => 'fas fa-fw fa-users',
+            'can' => 'view-users',
+        ],
+        [
+            'text' => 'Activity Logs',
+            'url' => 'activity-logs',
+            'icon' => 'fas fa-fw fa-history',
+            'can' => 'view-activity-logs',
         ],
     ],
 
@@ -536,6 +772,26 @@ return [
     */
 
     'plugins' => [
+        'jQuery' => [
+            'active' => true,
+            'files' => [
+                [
+                    'type' => 'js',
+                    'asset' => false,
+                    'location' => '//code.jquery.com/jquery-3.6.0.min.js',
+                ],
+            ],
+        ],
+        'Bootstrap' => [
+            'active' => true,
+            'files' => [
+                [
+                    'type' => 'js',
+                    'asset' => false,
+                    'location' => '//cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js',
+                ],
+            ],
+        ],
         'Datatables' => [
             'active' => false,
             'files' => [

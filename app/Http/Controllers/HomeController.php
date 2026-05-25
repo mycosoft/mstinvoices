@@ -9,6 +9,7 @@ use App\Models\Client;
 use App\Models\Item;
 use App\Models\Setting;
 use App\Models\Quotation;
+use App\Models\Expense;
 use Carbon\Carbon;
 
 class HomeController extends Controller
@@ -48,15 +49,25 @@ class HomeController extends Controller
         $paidCount = $paidInvoices->count();
         $pendingInvoices = $unpaidPartialInvoices->count();
         $totalRevenue = $paidInvoices->sum('total_amount') + $partialInvoices->sum('paid_amount');
-        $draftInvoices = $allInvoices->where('status', 'draft')->count();
         
         // Calculate derived statistics
-        $averageInvoiceValue = $paidCount > 0 ? round($totalRevenue / $paidCount, 2) : 0;
         $pendingAmount = $unpaidPartialInvoices->sum('balance_due');
         
         // Get this month's data efficiently
         $thisMonth = Carbon::now()->startOfMonth();
-        $thisMonthRevenue = $paidInvoices->where('invoice_date', '>=', $thisMonth)->sum('total_amount');
+        
+        // Calculate this month revenue from fully paid invoices
+        $thisMonthPaidRevenue = $paidInvoices->filter(function($invoice) use ($thisMonth) {
+            return $invoice->paid_date && $invoice->paid_date >= $thisMonth;
+        })->sum('total_amount');
+        
+        // Calculate this month revenue from partial payments
+        $thisMonthPartialRevenue = $partialInvoices->filter(function($invoice) use ($thisMonth) {
+            return $invoice->updated_at && $invoice->updated_at >= $thisMonth;
+        })->sum('paid_amount');
+        
+        // Total this month revenue (paid + partial payments)
+        $thisMonthRevenue = $thisMonthPaidRevenue + $thisMonthPartialRevenue;
         
         // Get overdue invoices efficiently
         $now = Carbon::now();
@@ -66,7 +77,17 @@ class HomeController extends Controller
         
         // Get monthly revenue data for chart (last 6 months) - optimized
         $monthlyRevenue = [];
+        $monthlyExpenses = [];
         $monthLabels = [];
+        
+        // Get all expenses for calculations
+        $allExpenses = Expense::where('user_id', $user->id)
+            ->select(['payment_status', 'status', 'amount', 'expense_date', 'created_at'])
+            ->get();
+            
+        // Calculate expense statistics
+        $totalExpenses = $allExpenses->sum('amount');
+        
         for ($i = 5; $i >= 0; $i--) {
             $month = Carbon::now()->subMonths($i);
             $monthStart = $month->copy()->startOfMonth();
@@ -82,7 +103,13 @@ class HomeController extends Controller
                 return $invoice->invoice_date && $invoice->invoice_date >= $monthStart && $invoice->invoice_date <= $monthEnd;
             })->sum('paid_amount');
             
+            // Calculate expenses for this month
+            $expensesInMonth = $allExpenses->filter(function($expense) use ($monthStart, $monthEnd) {
+                return $expense->expense_date && $expense->expense_date >= $monthStart && $expense->expense_date <= $monthEnd;
+            })->sum('amount');
+            
             $monthlyRevenue[] = $paidRevenueInMonth + $partialRevenueInMonth;
+            $monthlyExpenses[] = $expensesInMonth;
             $monthLabels[] = $month->format('M Y');
         }
         
@@ -92,17 +119,6 @@ class HomeController extends Controller
             'unpaid' => $allInvoices->where('payment_status', 'unpaid')->count(),
             'partial' => $allInvoices->where('payment_status', 'partial')->count(),
         ];
-        
-        // Get all quotations for statistics - optimized query
-        $allQuotations = Quotation::where('user_id', $user->id)
-            ->select(['status', 'total_amount'])
-            ->get();
-        
-        $acceptedQuotations = $allQuotations->where('status', 'accepted');
-        $totalQuotations = $allQuotations->count();
-        $acceptedCount = $acceptedQuotations->count();
-        $quotationRate = $totalQuotations > 0 ? round(($acceptedCount / $totalQuotations) * 100, 1) : 0;
-        $draftQuotations = $allQuotations->where('status', 'draft')->count();
         
         // Batch load recent data with relationships
         $recentInvoices = Invoice::where('user_id', $user->id)
@@ -130,17 +146,22 @@ class HomeController extends Controller
             ->limit(5)
             ->get();
             
-        $recentAcceptedQuotations = Quotation::where('user_id', $user->id)
-            ->where('status', 'accepted')
+        $recentQuotations = Quotation::where('user_id', $user->id)
             ->with('client:id,name')
-            ->select(['id', 'client_id', 'quotation_number', 'total_amount', 'accepted_date'])
-            ->latest('accepted_date')
-            ->limit(8)
+            ->select(['id', 'client_id', 'quotation_number', 'total_amount', 'status', 'created_at'])
+            ->latest('created_at')
+            ->limit(5)
             ->get();
         
         // Calculate additional statistics efficiently
         $totalClients = Client::where('user_id', $user->id)->count();
-        $totalItems = Item::where('user_id', $user->id)->count();
+        
+        // Get project statistics
+        $allProjects = \App\Models\Project::where('user_id', $user->id)->get();
+        $totalProjects = $allProjects->count();
+        $activeProjects = $allProjects->whereIn('status', ['pending', 'in_progress'])->count();
+        $completedProjects = $allProjects->where('status', 'completed')->count();
+        $cancelledProjects = $allProjects->where('status', 'cancelled')->count();
         
         // Get top clients efficiently
         $topClients = Client::where('user_id', $user->id)
@@ -181,11 +202,10 @@ class HomeController extends Controller
         return view('home', compact(
             'totalInvoices', 'paidCount', 'pendingInvoices', 'totalRevenue',
             'thisMonthRevenue', 'overdueInvoices', 'overdueAmount',
-            'monthlyRevenue', 'monthLabels', 'recentInvoices', 'paymentStatus',
-            'topClients', 'totalClients', 'totalItems', 'draftInvoices', 'averageInvoiceValue',
-            'quotationRate', 'pendingAmount', 'recentPayments', 'recentAcceptedQuotations',
-            'thisWeekRevenue', 'thisWeekInvoices', 'settings', 'totalQuotations', 
-            'acceptedCount', 'draftQuotations'
+            'monthlyRevenue', 'monthlyExpenses', 'monthLabels', 'recentInvoices', 'paymentStatus',
+            'topClients', 'totalClients', 'pendingAmount', 'recentPayments', 'recentQuotations',
+            'thisWeekRevenue', 'thisWeekInvoices', 'settings', 'totalExpenses',
+            'totalProjects', 'activeProjects', 'completedProjects', 'cancelledProjects'
         ));
     }
 }
